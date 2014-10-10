@@ -8,7 +8,7 @@ module HZulip ( Message(..)
               )
   where
 
-import Control.Lens
+import Control.Lens ((.~), (&), (^.))
 import qualified Data.ByteString.Char8 as BS (pack)
 import Network.Wreq
 
