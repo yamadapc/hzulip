@@ -33,7 +33,7 @@ instance FromJSON Response where
                            o .:? "events"
     parseJSON _ = mzero
 
--- !Represnts a response result, this is just so result Strings aren't
+-- |Represnts a response result, this is just so result Strings aren't
 -- modeled in memory
 data ResponseResult = ResponseError | ResponseSuccess
   deriving(Eq, Show, Ord)

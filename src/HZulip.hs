@@ -22,7 +22,7 @@ import HZulip.Types as ZT
 newZulip :: String -> String -> ZulipClient
 newZulip e k = ZulipClient e k defaultBaseUrl
 
--- !The default zulip API URL
+-- |The default zulip API URL
 defaultBaseUrl :: String
 defaultBaseUrl = "https://api.zulip.com/v1"
 
