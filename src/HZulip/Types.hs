@@ -5,20 +5,22 @@ import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad (mzero)
 import Data.Aeson
 
--- |Represents a Zulip API client
+-- |
+-- Represents a Zulip API client
 data ZulipClient = ZulipClient { clientEmail   :: String
                                , clientApiKey  :: String
                                , clientBaseUrl :: String
                                }
 
--- |The internal response representation for top-down parsing of Zulip API
+-- |
+-- The internal response representation for top-down parsing of Zulip API
 -- JSON responses
 data Response = Response { responseResult      :: ResponseResult
                          , responseMsg         :: String
 
                          , responseMessageId   :: Maybe String
                          , responseQueueId     :: Maybe String
-                         , responseLastEventId :: Maybe String
+                         , responseLastEventId :: Maybe Int
 
                          , responseEvents      :: Maybe [Event]
                          }
@@ -33,7 +35,8 @@ instance FromJSON Response where
                            o .:? "events"
     parseJSON _ = mzero
 
--- |Represnts a response result, this is just so result Strings aren't
+-- |
+-- Represnts a response result, this is just so result Strings aren't
 -- modeled in memory
 data ResponseResult = ResponseError | ResponseSuccess
   deriving(Eq, Show, Ord)
@@ -43,7 +46,8 @@ instance FromJSON ResponseResult where
     parseJSON (String "success") = pure ResponseSuccess
     parseJSON _                  = pure ResponseError
 
--- |Represents zulip events
+-- |
+-- Represents zulip events
 data Event = Event { eventType    :: String
                    , eventId      :: String
                    , eventMessage :: Maybe Message
@@ -56,7 +60,8 @@ instance FromJSON Event where
                            o .:? "message"
     parseJSON _ = mzero
 
--- |Represents a Zulip Message
+-- |
+-- Represents a Zulip Message
 data Message = Message { messageId               :: String
                        , messageType             :: String
                        , messageContent          :: String
@@ -103,7 +108,8 @@ instance FromJSON Message where
                            o .: "subject"
     parseJSON _ = mzero
 
--- |Represents a zulip user account - for both `display_recipient` and
+-- |
+-- Represents a zulip user account - for both `display_recipient` and
 -- `message_sender` representations
 data User = User { userId        :: String
                  , userFullName  :: String
@@ -121,7 +127,8 @@ instance FromJSON User where
                            o .: "id"
     parseJSON _ = mzero
 
--- |Represents some event queue
+-- |
+-- Represents some event queue
 data Queue = Queue { queueId     :: String
-                   , lastEventId :: String
+                   , lastEventId :: Int
                    }
