@@ -1,8 +1,8 @@
 name:                hzulip
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            A haskell wrapper for the Zulip API.
 description:         This a Zulip API wrapper for Haskell.
-homepage:            https://github.com/yamadapc/haskell-zulip
+homepage:            https://github.com/yamadapc/hzulip
 license:             GPL-2
 license-file:        LICENSE
 author:              Pedro Tacla Yamada
