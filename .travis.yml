@@ -1,4 +1,5 @@
 language: haskell
+ghc: 7.8
 after-success:
   - .ci/deploy-documentation.sh
 env:
