@@ -132,3 +132,7 @@ instance FromJSON User where
 data Queue = Queue { queueId     :: String
                    , lastEventId :: Int
                    }
+
+-- |
+-- The root type for Event callbacks
+type EventCallback = Event -> IO ()

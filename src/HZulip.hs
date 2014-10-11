@@ -4,12 +4,14 @@ module HZulip ( Message(..)
               , defaultBaseUrl
               , getEvents
               , newZulip
+              , onNewEvent
               , registerQueue
               , sendMessage
               )
   where
 
 import Control.Lens ((.~), (&), (^.))
+import Control.Monad (forever)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (pack)
 import Network.Wreq
@@ -75,6 +77,8 @@ registerQueue z evTps mdn = do
              return $ Queue qid lid
         else fail $ responseMsg body
 
+-- |
+-- Fetches new set of events from a `Queue`.
 getEvents :: ZulipClient -> Queue -> Bool -> IO [Event]
 getEvents z q b = do
     let opts = (reqOptions z) { WT.params = [ ("queue_id", T.pack $ queueId q)
@@ -83,7 +87,7 @@ getEvents z q b = do
                                             , ("dont_block", if b then "true"
                                                              else "false")
                                             ]
-    }
+                              }
 
     r <- getWith opts (eventsUrl z) >>= asJSON
     let body = r ^. responseBody
@@ -91,6 +95,14 @@ getEvents z q b = do
     if wasSuccessful body
         then let Just evs = responseEvents body in return evs
         else fail $ responseMsg body
+
+-- |
+-- Registers an event callback for all events and keeps executing it over
+-- events as they come in. Will loop forever
+onNewEvent :: ZulipClient -> Bool -> EventCallback -> IO ()
+onNewEvent z b f = do
+    q <- registerQueue z [] b
+    forever $ getEvents z q b >>= mapM_ f
 
 -- Private functions:
 -------------------------------------------------------------------------------
