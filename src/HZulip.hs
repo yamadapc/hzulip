@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-module HZulip ( Message(..)
+module HZulip ( Event(..)
+              , Message(..)
+              , Queue(..)
+              , User(..)
               , ZulipClient(..)
+              , EventCallback
               , defaultBaseUrl
               , getEvents
               , newZulip
