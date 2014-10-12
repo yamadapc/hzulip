@@ -70,6 +70,7 @@ data Message = Message { messageId               :: Int
                        , messageAvatarUrl        :: String
                        , messageTimestamp        :: Int
 
+                       -- See the comment on the `FromJSON Message` instance.
                        -- , messageDisplayRecipient :: Either String [User]
 
                        , messageSender           :: User
@@ -91,6 +92,8 @@ instance FromJSON Message where
                            o .: "avatar_url"        <*>
                            o .: "timestamp"         <*>
 
+                           -- I don't know if there's currently a way to
+                           -- parse `Either` types using `Data.Aeson`.
                            -- o .: "display_recipient" <*>
 
                            (User <$>
@@ -137,3 +140,7 @@ data Queue = Queue { queueId     :: String
 -- |
 -- The root type for Event callbacks
 type EventCallback = Event -> IO ()
+
+-- |
+-- Type for message callbacks
+type MessageCallback = Message -> IO ()
