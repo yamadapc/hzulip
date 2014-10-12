@@ -10,7 +10,7 @@ main = do
     let zulip = newZulip user key
 
     putStrLn "Listening for events"
-    onNewEvent zulip False printEvent
+    onNewEvent zulip ["message"] printEvent
 
 printEvent :: EventCallback
 printEvent (Event t i (Just m)) = putStrLn $ t ++ " - " ++
