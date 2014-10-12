@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module HZulip.Types where
 
 import Control.Applicative ((<$>), (<*>), pure)
@@ -18,7 +19,7 @@ data ZulipClient = ZulipClient { clientEmail   :: String
 data Response = Response { responseResult      :: ResponseResult
                          , responseMsg         :: String
 
-                         , responseMessageId   :: Maybe String
+                         , responseMessageId   :: Maybe Int
                          , responseQueueId     :: Maybe String
                          , responseLastEventId :: Maybe Int
 
@@ -49,7 +50,7 @@ instance FromJSON ResponseResult where
 -- |
 -- Represents zulip events
 data Event = Event { eventType    :: String
-                   , eventId      :: String
+                   , eventId      :: Int
                    , eventMessage :: Maybe Message
                    }
 
@@ -62,20 +63,20 @@ instance FromJSON Event where
 
 -- |
 -- Represents a Zulip Message
-data Message = Message { messageId               :: String
+data Message = Message { messageId               :: Int
                        , messageType             :: String
                        , messageContent          :: String
 
                        , messageAvatarUrl        :: String
                        , messageTimestamp        :: Int
 
-                       , messageDisplayRecipient :: Either String [User]
+                       -- , messageDisplayRecipient :: Either String [User]
 
                        , messageSender           :: User
 
                        , messageGravatarHash     :: String
 
-                       , messageRecipientId      :: String
+                       , messageRecipientId      :: Int
                        , messageClient           :: String
                        , messageSubjectLinks     :: [String]
                        , messageSubject          :: String
@@ -90,14 +91,14 @@ instance FromJSON Message where
                            o .: "avatar_url"        <*>
                            o .: "timestamp"         <*>
 
-                           o .: "display_recipient" <*>
+                           -- o .: "display_recipient" <*>
 
                            (User <$>
+                             o .: "sender_id"         <*>
                              o .: "sender_full_name"  <*>
                              o .: "sender_domain"     <*>
                              o .: "sender_email"      <*>
-                             o .: "sender_short_name" <*>
-                             o .: "sender_id"
+                             o .: "sender_short_name"
                            ) <*>
 
                            o .: "gravatar_hash"     <*>
@@ -111,7 +112,7 @@ instance FromJSON Message where
 -- |
 -- Represents a zulip user account - for both `display_recipient` and
 -- `message_sender` representations
-data User = User { userId        :: String
+data User = User { userId        :: Int
                  , userFullName  :: String
                  , userEmail     :: String
                  , userDomain    :: String
@@ -120,11 +121,11 @@ data User = User { userId        :: String
 
 instance FromJSON User where
     parseJSON (Object o) = User <$>
+                           o .: "id" <*>
                            o .: "full_name"  <*>
                            o .: "domain"     <*>
                            o .: "email"      <*>
-                           o .: "short_name" <*>
-                           o .: "id"
+                           o .: "short_name"
     parseJSON _ = mzero
 
 -- |

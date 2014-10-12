@@ -14,8 +14,9 @@ module HZulip ( Event(..)
               )
   where
 
+import Control.Concurrent
+import Control.Exception
 import Control.Lens ((.~), (&), (^.))
-import Control.Monad (forever)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (pack)
 import Network.Wreq
@@ -44,7 +45,7 @@ defaultBaseUrl = "https://api.zulip.com/v1"
 --
 -- It takes the message `mtype`, `mrecipients`, `msubject` and `mcontent`
 -- and returns the created message's `id` in the `IO` monad.
-sendMessage :: ZulipClient -> String -> [String] -> String -> String -> IO String
+sendMessage :: ZulipClient -> String -> [String] -> String -> String -> IO Int
 sendMessage z mtype mrecipients msubject mcontent = do
     let form = [ "type"    := mtype
                , "content" := mcontent
@@ -83,7 +84,7 @@ registerQueue z evTps mdn = do
 
 -- |
 -- Fetches new set of events from a `Queue`.
-getEvents :: ZulipClient -> Queue -> Bool -> IO [Event]
+getEvents :: ZulipClient -> Queue -> Bool -> IO (Queue, [Event])
 getEvents z q b = do
     let opts = (reqOptions z) { WT.params = [ ("queue_id", T.pack $ queueId q)
                                             , ("last_event_id", T.pack $ show $
@@ -97,7 +98,10 @@ getEvents z q b = do
     let body = r ^. responseBody
 
     if wasSuccessful body
-        then let Just evs = responseEvents body in return evs
+        then let Just evs = responseEvents body
+                 -- Get the last event id and pass it back with the `Queue`
+                 lEvId = maximum $ map eventId evs in
+             return (q { lastEventId = lEvId }, evs)
         else fail $ responseMsg body
 
 -- |
@@ -105,8 +109,13 @@ getEvents z q b = do
 -- events as they come in. Will loop forever
 onNewEvent :: ZulipClient -> Bool -> EventCallback -> IO ()
 onNewEvent z b f = do
-    q <- registerQueue z [] b
-    forever $ getEvents z q b >>= mapM_ f
+    q <- registerQueue z ["message"] b
+    handle (tryAgain q) (loop q)
+  where tryAgain :: Queue -> SomeException -> IO ()
+        tryAgain q = const $ threadDelay 1000000 >> loop q
+        loop q = getEvents z q False >>=
+                 \(q', evts) -> mapM_ f evts >>
+                                loop q'
 
 -- Private functions:
 -------------------------------------------------------------------------------
