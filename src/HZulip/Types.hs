@@ -99,8 +99,8 @@ instance FromJSON Message where
                            (User <$>
                              o .: "sender_id"         <*>
                              o .: "sender_full_name"  <*>
-                             o .: "sender_domain"     <*>
                              o .: "sender_email"      <*>
+                             o .: "sender_domain"     <*>
                              o .: "sender_short_name"
                            ) <*>
 
