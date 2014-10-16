@@ -3,8 +3,7 @@ hzulip
 [![Build Status](https://travis-ci.org/yamadapc/hzulip.svg?branch=master)](https://travis-ci.org/yamadapc/hzulip)
 [![Gitter chat](https://badges.gitter.im/yamadapc/hzulip.png)](https://gitter.im/yamadapc/hzulip)
 - - -
-A haskell wrapper for the zulip API. Currently only sending messages is
-wrapped. This is very much a work in progress.
+A haskell wrapper for the zulip API. This is very much a work in progress.
 
 ## Documentation
 The haddock documentation is available at
