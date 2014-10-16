@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternGuards #-}
 import Control.Concurrent (forkIO)
-import Control.Monad (unless)
+import Control.Monad (unless, liftM)
 import Data.List (isPrefixOf, stripPrefix)
 import Mueval.ArgsParse (Options(..))
 import Mueval.Context (defaultModules, defaultPackages)
@@ -36,29 +36,34 @@ executeCommand z msg = do
         cm = messageContent msg
 
     unless (e == clientEmail z) $ executeCommand' cm >>=
-                                  (\r -> do
-                                     putStrLn $ "Sending message: " ++ r
-                                     return r
-                                  ) >>=
-                                  sendPrivateMessage z [e] >>
-                                  return ()
+                                  \case
+                                     Just r -> do
+                                       putStrLn $ "Sending message: " ++ r
+                                       sendPrivateMessage z [e] r
+                                       return ()
+                                     Nothing -> return ()
 
-executeCommand' :: String -> IO String
-executeCommand' cm | Just expr <- stripPrefix ":t " cm = executeEvalType expr
-                   | otherwise = do
-                        putStrLn $ "Evaluating: " ++ cm
-                        executeEval cm
+executeCommand' :: String -> IO (Maybe String)
+executeCommand' cm | Just expr <- stripPrefix ":t " cm = do
+                        putStrLn $ "Evaluating type: " ++ expr
+                        liftM Just $ executeEvalType expr
+                   | Just expr <- stripPrefix ":e " cm = do
+                        putStrLn $ "Evaluating: " ++ expr
+                        liftM Just $ executeEval expr
+                   | otherwise = return Nothing
 
 executeEval :: String -> IO String
 executeEval expr = mueval expr >>= \case
-    Left err -> return $ "Error: Couldn't evaluate your expression\n" ++
-                         "Sorry for the lack of a decent error message"
-    Right (_, _, val) -> return val
+    Left err -> do putStrLn $ "Error: " ++ show err
+                   return $ "Error: Couldn't evaluate your expression\n" ++
+                            "Sorry for the lack of a decent error message"
+    Right (_, _, val) -> return $ take 50 val
 
 executeEvalType :: String -> IO String
 executeEvalType expr = mueval expr >>= \case
-    Left err -> return $ "Error: Couldn't evaluate your expression\n" ++
-                         "Sorry for the lack of a decent error message"
+    Left err -> do putStrLn $ "Error: " ++ show err
+                   return $ "Error: Couldn't evaluate your expression\n" ++
+                            "Sorry for the lack of a decent error message"
     Right (e, et, _) -> return $ e ++ "" ++ et
 
 fixLineBreaks :: String -> String
@@ -88,4 +93,5 @@ muevalOptions = Options { expression = ""
                         }
 
 mueval :: String -> IO (Either InterpreterError (String, String, String))
-mueval expr = runInterpreter (interpreter muevalOptions)
+mueval expr = runInterpreter (interpreter muevalOptions { expression = expr
+                                                        })
