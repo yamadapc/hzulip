@@ -134,7 +134,7 @@ onNewEvent z etypes f = do
     q <- registerQueue z etypes False
     handle (tryAgain q) (loop q)
   where tryAgain :: Queue -> SomeException -> IO ()
-        tryAgain q = const $ threadDelay 1000000 >> loop q
+        tryAgain q = const $ threadDelay 1000000 >> handle (tryAgain q) (loop q)
         loop q = getEvents z q False >>=
                  \(q', evts) -> mapM_ f evts >>
                                 loop q'
