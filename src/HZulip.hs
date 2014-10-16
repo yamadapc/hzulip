@@ -5,6 +5,7 @@ module HZulip ( Event(..)
               , User(..)
               , ZulipClient(..)
               , EventCallback
+              , MessageCallback
               , defaultBaseUrl
               , eventTypes
               , getEvents
