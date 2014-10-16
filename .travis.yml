@@ -1,9 +1,12 @@
 language: haskell
 ghc: 7.8
 script:
-  - cabal configure --enable-tests && cabal build && cabal test --show-details=always --test-option=--color
+- cabal configure --enable-tests && cabal build && cabal test --show-details=always
+  --test-option=--color
 after_success:
-  - .ci/deploy-documentation.sh
+- ".ci/deploy-documentation.sh"
 env:
   global:
-    secure: tjw5UjPcmvHtprDy2wmVEMQS6VA50XYE5XrWjreBedEYzYFTrtuPHKBzOwkQNFIOxw3/VZTRApdikOuobwH3uFRhQ0WRtl24iOExrg6/JPA9Q1WYYPjZgQsCxDy1d2cMnkH4595B10YwvekcAxHczue2T45GXjFvzVN3c8XcHRI=
+  - secure: tjw5UjPcmvHtprDy2wmVEMQS6VA50XYE5XrWjreBedEYzYFTrtuPHKBzOwkQNFIOxw3/VZTRApdikOuobwH3uFRhQ0WRtl24iOExrg6/JPA9Q1WYYPjZgQsCxDy1d2cMnkH4595B10YwvekcAxHczue2T45GXjFvzVN3c8XcHRI=
+  - secure: TWADUr8djRchjmL1o3h+qle5jsoFpKbeYpUT8aOiXvZ0V1xOCKnt/7UAruREVEcwz/tW4d4akPaRnV1PFeOjMNEQ8W5bTQ3J33e4rNqieFYH42d25y7/jVp6zh/1hJHf5isb6Qd9GMtIUnYzQ4nkTmnsfr6misXVC/giRQdhWJ4=
+  - secure: q8wHPi1VVfflConNDonqVynnkFdX0psfZ1tSkLCin5fUHggEL6H2MqVCWgcJ3ujhsC5YaXPADbPd61jkSAHI1vKk0N7BROVzCCk8x9WJwuCfrHapf27cTsuLig4HTjpq6z+uUtewzB+QYSWeZZAyb8HcoRTByFuWbQ6t7BQ+gDY=

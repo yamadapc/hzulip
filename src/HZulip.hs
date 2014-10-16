@@ -9,6 +9,7 @@ module HZulip ( Event(..)
               , defaultBaseUrl
               , eventTypes
               , getEvents
+              , getSubscriptions
               , newZulip
               , onNewEvent
               , onNewMessage
@@ -19,11 +20,12 @@ module HZulip ( Event(..)
               )
   where
 
-import Control.Concurrent
-import Control.Exception
-import Control.Lens ((.~), (&), (^.))
+import Control.Concurrent (threadDelay)
+import Control.Exception (SomeException, handle)
+import Control.Lens ((.~), (&), (^.), (^..))
+import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Char8 as BS (pack)
-import qualified Data.Text as T (pack)
+import qualified Data.Text as T (pack, unpack)
 import Network.Wreq
 import qualified Network.Wreq.Types as WT (params)
 
@@ -105,6 +107,14 @@ registerQueue z evTps mdn = do
         else fail $ responseMsg body
 
 -- |
+-- Get a list of the streams the client is currently subscribed to.
+getSubscriptions :: ZulipClient -> IO [String]
+getSubscriptions z = do
+    r <- getWith (reqOptions z) (subscriptionsUrl z)
+    return $ map T.unpack $ r ^.. responseBody . key "subscriptions"
+                                . values . key "name" . _String
+
+-- |
 -- Fetches new set of events from a `Queue`.
 getEvents :: ZulipClient -> Queue -> Bool -> IO (Queue, [Event])
 getEvents z q b = do
@@ -171,6 +181,11 @@ registerUrl = (++ "/register") . clientBaseUrl
 -- Gets the endpoint for fetching events for a given `ZulipClient`
 eventsUrl :: ZulipClient -> String
 eventsUrl = (++ "/events") . clientBaseUrl
+
+-- |
+-- Gets the endpoint for fetching subscriptions for a given `ZulipClient`
+subscriptionsUrl :: ZulipClient -> String
+subscriptionsUrl = (++ "/users/me/subscriptions") . clientBaseUrl
 
 -- |
 -- Constructs the `Wreq` HTTP request `Options` object for a `ZulipClient`
