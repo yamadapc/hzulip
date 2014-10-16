@@ -1,14 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternGuards #-}
 import Control.Concurrent (forkIO)
-import Control.Monad (unless, liftM)
+import Control.Monad (unless, liftM, void)
 import Data.List (isPrefixOf, stripPrefix)
 import Mueval.ArgsParse (Options(..))
 import Mueval.Context (defaultModules, defaultPackages)
 import Mueval.Interpreter (interpreter)
 import Language.Haskell.Interpreter (runInterpreter, InterpreterError)
-
 import System.Environment (getEnv)
+import System.Process (readProcess)
 
 import HZulip
 
@@ -33,23 +33,29 @@ printEvent _ = return ()
 executeCommand :: ZulipClient -> MessageCallback
 executeCommand z msg = do
     let e = userEmail $ messageSender msg
+        tp = messageSubject msg
         cm = messageContent msg
 
     unless (e == clientEmail z) $ executeCommand' cm >>=
                                   \case
                                      Just r -> do
                                        putStrLn $ "Sending message: " ++ r
-                                       sendPrivateMessage z [e] r
-                                       return ()
+                                       let rec = messageDisplayRecipient msg
+                                       void $ case rec of
+                                           Left s ->
+                                               sendStreamMessage z s tp r
+                                           Right us ->
+                                               let es = map userEmail us in
+                                               sendPrivateMessage z es r
                                      Nothing -> return ()
 
 executeCommand' :: String -> IO (Maybe String)
-executeCommand' cm | Just expr <- stripPrefix ":t " cm = do
-                        putStrLn $ "Evaluating type: " ++ expr
-                        liftM Just $ executeEvalType expr
-                   | Just expr <- stripPrefix ":e " cm = do
-                        putStrLn $ "Evaluating: " ++ expr
+executeCommand' cm | Just expr <- stripPrefix "@eval haskell " cm = do
+                        putStrLn $ "Evaluating haskell: " ++ expr
                         liftM Just $ executeEval expr
+                   | Just expr <- stripPrefix "@eval javascript " cm = do
+                        putStrLn $ "Evaluating javascript: " ++ expr
+                        liftM Just $ executeJavascript expr
                    | otherwise = return Nothing
 
 executeEval :: String -> IO String
@@ -59,12 +65,8 @@ executeEval expr = mueval expr >>= \case
                             "Sorry for the lack of a decent error message"
     Right (_, _, val) -> return $ take 50 val
 
-executeEvalType :: String -> IO String
-executeEvalType expr = mueval expr >>= \case
-    Left err -> do putStrLn $ "Error: " ++ show err
-                   return $ "Error: Couldn't evaluate your expression\n" ++
-                            "Sorry for the lack of a decent error message"
-    Right (e, et, _) -> return $ e ++ "" ++ et
+executeJavascript :: String -> IO String
+executeJavascript expr = readProcess "nodejs" ["external-evaluators/eval.js", expr] ""
 
 fixLineBreaks :: String -> String
 fixLineBreaks = replace "\\8217" "\8217" .

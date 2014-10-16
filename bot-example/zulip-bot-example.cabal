@@ -8,7 +8,9 @@ cabal-version:       >=1.10
 executable zulip-bot-example
   main-is:             Main.hs
   build-depends:       base >=4 && <5
-                     , hzulip >= 0.3.0.3
+                     , hzulip >= 0.4.1.0
                      , mueval >=0.9 && <1
+                     , process >=1.1 && <2
                      , hint >=0.4 && <1
+  hs-source-dirs:      src
   default-language:    Haskell2010
