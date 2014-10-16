@@ -6,6 +6,7 @@ import Data.List (isPrefixOf, stripPrefix)
 import Mueval.ArgsParse (Options(..))
 import Mueval.Context (defaultModules, defaultPackages)
 import Mueval.Interpreter (interpreter)
+import Mueval.Parallel (watchDog)
 import Language.Haskell.Interpreter (runInterpreter, InterpreterError)
 import System.Environment (getEnv)
 import System.Process (readProcess)
@@ -21,7 +22,9 @@ main = do
 
     putStrLn "Listening for events"
     _ <- forkIO $ onNewEvent zulip ["message"] printEvent
-    onNewMessage zulip (executeCommand zulip)
+    onNewMessage zulip $ \msg -> do
+        tid <- forkIO $ executeCommand zulip msg
+        watchDog 20 tid
 
 printEvent :: EventCallback
 printEvent (Event t i (Just m)) = putStrLn $ "" ++ 
