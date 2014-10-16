@@ -1,5 +1,5 @@
 name:                hzulip
-version:             0.3.0.3
+version:             0.4.0.0
 synopsis:            A haskell wrapper for the Zulip API.
 description:         This a Zulip API wrapper for Haskell.
 homepage:            https://github.com/yamadapc/hzulip
@@ -36,4 +36,5 @@ test-suite hzulip-spec
                      , aeson >=0.7 && <1
                      , bytestring >=0.10 && <1
                      , hspec >=1.11 && <2
+                     , raw-strings-qq >=1.0.2 && <2
   default-language:    Haskell2010

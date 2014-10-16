@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
-
 module HZulip.Types where
 
-import Control.Applicative ((<$>), (<*>), pure)
+import Control.Applicative ((<$>), (<*>), (<|>), pure)
 import Control.Monad (mzero)
 import Data.Aeson
+import Data.Aeson.Types
 
 -- |
 -- Represents a Zulip API client
@@ -12,6 +12,7 @@ data ZulipClient = ZulipClient { clientEmail   :: String
                                , clientApiKey  :: String
                                , clientBaseUrl :: String
                                }
+  deriving (Eq, Ord, Show)
 
 -- |
 -- The internal response representation for top-down parsing of Zulip API
@@ -25,16 +26,7 @@ data Response = Response { responseResult      :: ResponseResult
 
                          , responseEvents      :: Maybe [Event]
                          }
-
-instance FromJSON Response where
-    parseJSON (Object o) = Response <$>
-                           o .:  "result"        <*>
-                           o .:  "msg"           <*>
-                           o .:? "id"            <*>
-                           o .:? "queue_id"      <*>
-                           o .:? "last_event_id" <*>
-                           o .:? "events"
-    parseJSON _ = mzero
+  deriving (Eq, Ord, Show)
 
 -- |
 -- Represnts a response result, this is just so result Strings aren't
@@ -42,24 +34,13 @@ instance FromJSON Response where
 data ResponseResult = ResponseError | ResponseSuccess
   deriving(Eq, Show, Ord)
 
-
-instance FromJSON ResponseResult where
-    parseJSON (String "success") = pure ResponseSuccess
-    parseJSON _                  = pure ResponseError
-
 -- |
 -- Represents zulip events
 data Event = Event { eventType    :: String
                    , eventId      :: Int
                    , eventMessage :: Maybe Message
                    }
-
-instance FromJSON Event where
-    parseJSON (Object o) = Event <$>
-                           o .: "type"     <*>
-                           o .:  "id"      <*>
-                           o .:? "message"
-    parseJSON _ = mzero
+  deriving (Eq, Ord, Show)
 
 -- |
 -- Represents a Zulip Message
@@ -71,7 +52,7 @@ data Message = Message { messageId               :: Int
                        , messageTimestamp        :: Int
 
                        -- See the comment on the `FromJSON Message` instance.
-                       -- , messageDisplayRecipient :: Either String [User]
+                       , messageDisplayRecipient :: Either String [User]
 
                        , messageSender           :: User
 
@@ -82,6 +63,54 @@ data Message = Message { messageId               :: Int
                        , messageSubjectLinks     :: [String]
                        , messageSubject          :: String
                        }
+  deriving (Eq, Ord, Show)
+
+-- |
+-- Represents a zulip user account - for both `display_recipient` and
+-- `message_sender` representations
+data User = User { userId        :: Int
+                 , userFullName  :: String
+                 , userEmail     :: String
+                 , userDomain    :: String
+                 , userShortName :: String
+                 }
+  deriving (Eq, Ord, Show)
+
+-- |
+-- Represents some event queue
+data Queue = Queue { queueId     :: String
+                   , lastEventId :: Int
+                   }
+  deriving (Eq, Ord, Show)
+
+-- |
+-- The root type for Event callbacks
+type EventCallback = Event -> IO ()
+
+-- |
+-- Type for message callbacks
+type MessageCallback = Message -> IO ()
+
+instance FromJSON Response where
+    parseJSON (Object o) = Response <$>
+                           o .:  "result"        <*>
+                           o .:  "msg"           <*>
+                           o .:? "id"            <*>
+                           o .:? "queue_id"      <*>
+                           o .:? "last_event_id" <*>
+                           o .:? "events"
+    parseJSON _ = mzero
+
+instance FromJSON ResponseResult where
+    parseJSON (String "success") = pure ResponseSuccess
+    parseJSON _                  = pure ResponseError
+
+instance FromJSON Event where
+    parseJSON (Object o) = Event <$>
+                           o .: "type"     <*>
+                           o .:  "id"      <*>
+                           o .:? "message"
+    parseJSON _ = mzero
 
 instance FromJSON Message where
     parseJSON (Object o) = Message <$>
@@ -92,9 +121,8 @@ instance FromJSON Message where
                            o .: "avatar_url"        <*>
                            o .: "timestamp"         <*>
 
-                           -- I don't know if there's currently a way to
-                           -- parse `Either` types using `Data.Aeson`.
-                           -- o .: "display_recipient" <*>
+                           (parseDisplayRecipient =<<
+                             o .: "display_recipient") <*>
 
                            (User <$>
                              o .: "sender_id"         <*>
@@ -112,35 +140,15 @@ instance FromJSON Message where
                            o .: "subject"
     parseJSON _ = mzero
 
--- |
--- Represents a zulip user account - for both `display_recipient` and
--- `message_sender` representations
-data User = User { userId        :: Int
-                 , userFullName  :: String
-                 , userEmail     :: String
-                 , userDomain    :: String
-                 , userShortName :: String
-                 }
-
 instance FromJSON User where
     parseJSON (Object o) = User <$>
                            o .: "id" <*>
                            o .: "full_name"  <*>
-                           o .: "domain"     <*>
                            o .: "email"      <*>
+                           o .: "domain"     <*>
                            o .: "short_name"
     parseJSON _ = mzero
 
--- |
--- Represents some event queue
-data Queue = Queue { queueId     :: String
-                   , lastEventId :: Int
-                   }
-
--- |
--- The root type for Event callbacks
-type EventCallback = Event -> IO ()
-
--- |
--- Type for message callbacks
-type MessageCallback = Message -> IO ()
+parseDisplayRecipient :: Value -> Parser (Either String [User])
+parseDisplayRecipient v = Right <$> parseJSON v <|>
+                          Left <$> parseJSON v
