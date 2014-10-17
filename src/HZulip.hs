@@ -6,6 +6,7 @@ module HZulip ( Event(..)
               , ZulipClient(..)
               , EventCallback
               , MessageCallback
+              , addSubscriptions
               , defaultBaseUrl
               , eventTypes
               , getEvents
@@ -23,6 +24,7 @@ module HZulip ( Event(..)
 import Control.Concurrent (threadDelay)
 import Control.Exception (SomeException, handle)
 import Control.Lens ((.~), (&), (^.), (^..))
+import Control.Monad (void)
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (pack, unpack)
@@ -113,6 +115,13 @@ getSubscriptions z = do
     r <- getWith (reqOptions z) (subscriptionsUrl z)
     return $ map T.unpack $ r ^.. responseBody . key "subscriptions"
                                 . values . key "name" . _String
+
+-- |
+-- Add new Stream subscriptions to the client.
+addSubscriptions :: ZulipClient -> [String] -> IO ()
+addSubscriptions z sbs = do
+    let form = [ "subscriptions" := show sbs ]
+    void $ postWith (reqOptions z) (subscriptionsUrl z) form
 
 -- |
 -- Fetches new set of events from a `Queue`.
