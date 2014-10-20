@@ -1,7 +1,6 @@
 module HZulipSpec where
 
 import System.Environment (getEnv)
-import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 
 import HZulip
@@ -9,11 +8,11 @@ import HZulip
 spec :: Spec
 spec = do
     -- TODO - stub IO
-    let user = unsafePerformIO $ getEnv "ZULIP_USER"
-        key = unsafePerformIO $ getEnv "ZULIP_KEY"
-        z = newZulip user key
-
     describe "getSubscriptions" $
         it "returns the bot's current subscriptions" $ do
+            user <- getEnv "ZULIP_USER"
+            key <- getEnv "ZULIP_KEY"
+            z <- newZulip user key
+
             subscriptions <- getSubscriptions z
             subscriptions `shouldBe` ["haskell"]

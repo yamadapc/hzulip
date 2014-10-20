@@ -28,7 +28,9 @@ import Control.Monad (void)
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Char8 as BS (pack)
 import qualified Data.Text as T (pack, unpack)
-import Network.Wreq
+import Network.Wreq (FormParam(..), Options(), asJSON, auth, defaults,
+                    basicAuth, responseBody)
+import Network.Wreq.Session (getWith, postWith, withSession)
 import qualified Network.Wreq.Types as WT (params)
 
 import HZulip.Types as ZT
@@ -39,8 +41,8 @@ import HZulip.Types as ZT
 -- |
 -- Helper for creating a `ZulipClient` with the `baseUrl` set to
 -- `defaultBaseUrl`
-newZulip :: String -> String -> ZulipClient
-newZulip e k = ZulipClient e k defaultBaseUrl
+newZulip :: String -> String -> IO ZulipClient
+newZulip e k = withSession (return . ZulipClient e k defaultBaseUrl)
 
 -- |
 -- The default zulip API URL
@@ -67,7 +69,9 @@ sendMessage z mtype mrecipients msubject mcontent = do
                , "subject" := msubject
                ]
 
-    r <- postWith (reqOptions z) (messagesUrl z) form >>= asJSON
+    r <- postWith (reqOptions z) (clientSession z) (messagesUrl z) form >>=
+         asJSON
+
     let body = r ^. responseBody
 
     if wasSuccessful body
@@ -99,7 +103,8 @@ registerQueue z evTps mdn = do
                , "apply_markdown" := (if mdn then "true" else "false" :: String)
                ]
 
-    r <- postWith (reqOptions z) (registerUrl z) form >>= asJSON
+    r <- postWith (reqOptions z) (clientSession z) (registerUrl z) form >>=
+         asJSON
     let body = r ^. responseBody
 
     if wasSuccessful body
@@ -112,7 +117,7 @@ registerQueue z evTps mdn = do
 -- Get a list of the streams the client is currently subscribed to.
 getSubscriptions :: ZulipClient -> IO [String]
 getSubscriptions z = do
-    r <- getWith (reqOptions z) (subscriptionsUrl z)
+    r <- getWith (reqOptions z) (clientSession z) (subscriptionsUrl z)
     return $ map T.unpack $ r ^.. responseBody . key "subscriptions"
                                 . values . key "name" . _String
 
@@ -121,7 +126,7 @@ getSubscriptions z = do
 addSubscriptions :: ZulipClient -> [String] -> IO ()
 addSubscriptions z sbs = do
     let form = [ "subscriptions" := show sbs ]
-    void $ postWith (reqOptions z) (subscriptionsUrl z) form
+    void $ postWith (reqOptions z) (clientSession z) (subscriptionsUrl z) form
 
 -- |
 -- Fetches new set of events from a `Queue`.
@@ -135,7 +140,7 @@ getEvents z q b = do
                                             ]
                               }
 
-    r <- getWith opts (eventsUrl z) >>= asJSON
+    r <- getWith opts (clientSession z) (eventsUrl z) >>= asJSON
     let body = r ^. responseBody
 
     if wasSuccessful body
@@ -199,4 +204,5 @@ subscriptionsUrl = (++ "/users/me/subscriptions") . clientBaseUrl
 -- |
 -- Constructs the `Wreq` HTTP request `Options` object for a `ZulipClient`
 reqOptions :: ZulipClient -> Options
-reqOptions (ZulipClient e k _) = defaults & auth .~ basicAuth (BS.pack e) (BS.pack k)
+reqOptions (ZulipClient e k _ _) = defaults & auth .~ basicAuth (BS.pack e)
+                                                                (BS.pack k)

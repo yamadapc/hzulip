@@ -5,14 +5,16 @@ import Control.Applicative ((<$>), (<*>), (<|>), pure)
 import Control.Monad (mzero)
 import Data.Aeson
 import Data.Aeson.Types
+import Network.Wreq.Session
 
 -- |
 -- Represents a Zulip API client
 data ZulipClient = ZulipClient { clientEmail   :: String
                                , clientApiKey  :: String
                                , clientBaseUrl :: String
+                               , clientSession :: Session
                                }
-  deriving (Eq, Ord, Show)
+  deriving (Show)
 
 -- |
 -- The internal response representation for top-down parsing of Zulip API
