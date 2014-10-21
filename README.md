@@ -1,6 +1,8 @@
 hzulip
 ======
 [![Build Status](https://travis-ci.org/yamadapc/hzulip.svg?branch=master)](https://travis-ci.org/yamadapc/hzulip)
+[![Hackage](https://img.shields.io/hackage/v/hzulip.svg)](https://hackage.haskell.org/package/hzulip)
+[![Dependencies Status](http://img.shields.io/hackage-deps/v/hzulip.svg)](http://packdeps.haskellers.com/feed?needle=hzulip)
 [![Gitter chat](https://badges.gitter.im/yamadapc/hzulip.png)](https://gitter.im/yamadapc/hzulip)
 - - -
 A haskell wrapper for the zulip API. This is very much a work in progress.
