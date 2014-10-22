@@ -7,10 +7,43 @@ hzulip
 - - -
 A haskell wrapper for the zulip API. This is very much a work in progress.
 
+## Installing
+Simply installing through cabal with `cabal install hzulip` should do it.
+
+## Usage
+```haskell
+import Web.HZulip
+
+main :: IO ()
+main = do
+    -- Before doing anything, a `ZulipClient` needs to be created. This will
+    -- keep your credentials stored, so you don't have to keep passing them in,
+    -- as well as use a single HTTP `Manager`, which should increase the
+    -- performance of several subsequent API requests.
+    z <- newZulip "bot-email" "api-key"
+
+    -- Sending messages is really straightforward, there are helpers for sending
+    -- private and stream messages and a generalized function for constructing
+    -- higher-level usage patterns.
+    sendPrivateMessage z ["someone-cool"] "Hey, I'm really tired, what's up?"
+
+    -- Listening for events is as easy as registering a callback function. As
+    -- long as your bot is subscribed to the events it expects to listen for,
+    -- it'll get away with:
+    onNewEvent z ["message"] $ \msg -> do
+        let usr = messageSender msg
+            usrName = userFullName usr
+            usrEmail = userEmail usr
+
+        sendPrivateMessage z [usrEmail] $ "Thanks for the message " ++
+                                          usrName ++ "!!"
+
+```
+
 ## Documentation
-The haddock documentation is available at
+The best resource on this is naturally its haddock documentation, available at
 [yamadapc.github.io/hzulip](https://yamadapc.github.io/hzulip). You might also
-be interested in the [zulip API documentation](https://zulip.com/api/).
+be interested in the [zulip API documentation](https://zulip.com/api/) as well.
 
 There's also an example bot, which does remote code evaluation on the
 `bot-example` directory. It's far from perfect/complete, but since I really have
