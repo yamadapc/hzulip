@@ -1,24 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
-module HZulip ( Event(..)
-              , Message(..)
-              , Queue(..)
-              , User(..)
-              , ZulipClient(..)
-              , EventCallback
-              , MessageCallback
-              , addSubscriptions
-              , defaultBaseUrl
-              , eventTypes
-              , getEvents
-              , getSubscriptions
-              , newZulip
-              , onNewEvent
-              , onNewMessage
-              , registerQueue
-              , sendMessage
-              , sendPrivateMessage
-              , sendStreamMessage
-              )
+module Web.HZulip ( Event(..)
+                  , Message(..)
+                  , Queue(..)
+                  , User(..)
+                  , ZulipClient(..)
+                  , EventCallback
+                  , MessageCallback
+                  , addSubscriptions
+                  , defaultBaseUrl
+                  , eventTypes
+                  , getEvents
+                  , getSubscriptions
+                  , newZulip
+                  , onNewEvent
+                  , onNewMessage
+                  , registerQueue
+                  , sendMessage
+                  , sendPrivateMessage
+                  , sendStreamMessage
+                  )
   where
 
 import Control.Concurrent (threadDelay)
@@ -33,7 +33,7 @@ import Network.Wreq (FormParam(..), Options(), asJSON, auth, defaults,
 import Network.Wreq.Session (getWith, postWith, withSession)
 import qualified Network.Wreq.Types as WT (params)
 
-import HZulip.Types as ZT
+import Web.HZulip.Types as ZT
 
 -- Public functions:
 -------------------------------------------------------------------------------

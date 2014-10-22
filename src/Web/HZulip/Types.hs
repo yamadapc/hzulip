@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module HZulip.Types where
+module Web.HZulip.Types where
 
 import Control.Applicative ((<$>), (<*>), (<|>), pure)
 import Control.Monad (mzero)
