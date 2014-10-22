@@ -51,6 +51,9 @@ no interest in writting bots, as much as I'd have in simply hooking existing
 tools into `zulip`, it's left as is. It shouldn't be too hard to improve on it
 and build something that's actually useful.
 
+Now there's also a better implementation of the example evaluation bot at
+[zulip-eval-bot](https://github.com/yamadapc/zulip-eval-bot).
+
 ## License
 This code is licensed under the GPLv2 license for Pedro Tacla Yamada. Plese
 refer to [LICENSE](/LICENSE) for more information.
