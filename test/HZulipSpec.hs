@@ -3,7 +3,7 @@ module HZulipSpec where
 import System.Environment (getEnv)
 import Test.Hspec
 
-import HZulip
+import Web.HZulip
 
 spec :: Spec
 spec = do

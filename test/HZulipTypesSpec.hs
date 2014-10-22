@@ -6,7 +6,7 @@ import Data.Aeson
 import Test.Hspec
 import Text.RawString.QQ
 
-import HZulip.Types
+import Web.HZulip.Types
 
 spec :: Spec
 spec = do
