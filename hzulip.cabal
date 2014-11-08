@@ -16,7 +16,12 @@ library
   exposed-modules:     Web.HZulip
                      , Web.HZulip.Types
   build-depends:       base >=4 && <5
-                     , wreq >=0.2 && <1
+                     , http-client >=0.2 && <1
+                     , http-client-tls
+                     , http-types
+                     , exceptions >=0.6 && <0.7
+                     , mtl >=2.1 && <2.2
+                     , transformers
                      , lens >=4.4 && <5
                      , aeson >=0.7 && <1
                      , lens-aeson >=1 && <2
@@ -31,7 +36,12 @@ test-suite hzulip-spec
   hs-source-dirs:      src
                      , test
   build-depends:       base >=4 && <5
-                     , wreq >=0.2 && <1
+                     , http-client >=0.2 && <1
+                     , http-client-tls
+                     , http-types
+                     , exceptions >=0.6 && <0.7
+                     , mtl >=2.1 && <2.2
+                     , transformers
                      , lens >=4.4 && <5
                      , aeson >=0.7 && <1
                      , lens-aeson >=1 && <2

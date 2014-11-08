@@ -1,5 +1,6 @@
 module HZulipSpec where
 
+import Control.Monad.IO.Class
 import System.Environment (getEnv)
 import Test.Hspec
 
@@ -12,7 +13,8 @@ spec = do
         it "returns the bot's current subscriptions" $ do
             user <- getEnv "ZULIP_USER"
             key <- getEnv "ZULIP_KEY"
-            z <- newZulip user key
+            z <- zulipOptions user key
 
-            subscriptions <- getSubscriptions z
-            subscriptions `shouldBe` ["haskell"]
+            withZulip z $ do
+                subscriptions <- getSubscriptions
+                liftIO $ subscriptions `shouldBe` ["haskell"]

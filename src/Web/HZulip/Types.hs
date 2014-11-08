@@ -1,20 +1,31 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Web.HZulip.Types where
 
 import Control.Applicative ((<$>), (<*>), (<|>), pure)
 import Control.Monad (mzero)
-import Data.Aeson
-import Data.Aeson.Types
-import Network.Wreq.Session
+import Control.Monad.Trans.Reader (ReaderT)
+import Data.Aeson.Types (FromJSON(..), Parser, Value(..), (.:?), (.:))
+import Network.HTTP.Client (Manager)
+
+-- |
+-- The Monad in which Zulip API actions happen in. This is a 'ReaderT'
+-- alias, so it's also a instance of 'MonadTrans', 'MonadIO' etc.
+type ZulipM a = ReaderT ZulipOptions IO a
 
 -- |
 -- Represents a Zulip API client
-data ZulipClient = ZulipClient { clientEmail   :: String
-                               , clientApiKey  :: String
-                               , clientBaseUrl :: String
-                               , clientSession :: Session
-                               }
-  deriving (Show)
+data ZulipOptions = ZulipOptions { clientEmail   :: String
+                                 , clientApiKey  :: String
+                                 , clientBaseUrl :: String
+                                 , clientManager :: Manager
+                                 }
+
+instance Show ZulipOptions where
+    show ZulipOptions{..} = "ZulipOptions { " ++ show clientEmail  ++
+                            "\n            , " ++ show clientApiKey ++
+                            "\n            , " ++ show clientBaseUrl ++
+                            "\n            , Manager {...}\n}"
 
 -- |
 -- The internal response representation for top-down parsing of Zulip API
@@ -87,11 +98,11 @@ data Queue = Queue { queueId     :: String
 
 -- |
 -- The root type for Event callbacks
-type EventCallback = Event -> IO ()
+type EventCallback = Event -> ZulipM ()
 
 -- |
 -- Type for message callbacks
-type MessageCallback = Message -> IO ()
+type MessageCallback = Message -> ZulipM ()
 
 instance FromJSON Response where
     parseJSON (Object o) = Response <$>
