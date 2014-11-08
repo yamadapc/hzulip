@@ -266,17 +266,19 @@ onNewMessage f = onNewEvent ["message"] $ \evt ->
 -------------------------------------------------------------------------------
 
 data Endpoint = Messages | Register | Events | Subscriptions | Streams
+
+-- |
+-- Key-value pair abstraction for working with querystrings or form-data
 type RequestData = [(T.Text, String)]
 
 -- |
--- Makes a request to some 'Endpoint' in the zulip API
+-- Makes a request to some @Endpoint@ in the zulip API
 zulipMakeRequest :: Endpoint -> Method -> RequestData -> ZulipM BL.ByteString
 zulipMakeRequest e = zulipMakeRequest' (endpointSuffix e)
 
 -- |
 -- Makes a request to some untyped URL in the zulip API. Serializes the
--- 'RequestData' as a QueryString on GET requests and as form-data
--- otherwise
+-- data as a QueryString on GET requests and as form-data otherwise
 zulipMakeRequest' :: String -> Method -> RequestData -> ZulipM BL.ByteString
 zulipMakeRequest' u m d = do
     z <- ask
@@ -294,8 +296,8 @@ decodeResponse b = case decode b of
     _ -> fail $ "Unexpected response from the Zulip API: " ++ CL.unpack b
 
 -- |
--- Adds a QueryString or FormData body, represented by a 'RequestData' list
--- of tuples, and authenticates the request, with the current zulip state's
+-- Adds a QueryString or FormData body, represented by a list of tuples,
+-- and authenticates the request, with the current zulip state's
 -- credentials.
 prepareRequest :: RequestData -> Request -> ZulipM Request
 prepareRequest [] r = applyAuth r
