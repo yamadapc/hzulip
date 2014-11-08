@@ -15,29 +15,30 @@ Simply installing through cabal with `cabal install hzulip` should do it.
 import Web.HZulip
 
 main :: IO ()
-main = do
-    -- Before doing anything, a `ZulipClient` needs to be created. This will
-    -- keep your credentials stored, so you don't have to keep passing them in,
-    -- as well as use a single HTTP `Manager`, which should increase the
-    -- performance of several subsequent API requests.
-    z <- newZulip "bot-email" "api-key"
+main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
+    -- Since we are inside the ZulipM ReaderT monad transformer, we
+    -- don't need to pass options around. The above function already
+    -- created an HTTP manager, for connection pooling and wrapped the
+    -- default configuration options with the Monad:
+    print =<< getSubscriptions
+    -- >> ["haskell"]
 
-    -- Sending messages is really straightforward, there are helpers for sending
-    -- private and stream messages and a generalized function for constructing
-    -- higher-level usage patterns.
-    sendPrivateMessage z ["someone-cool"] "Hey, I'm really tired, what's up?"
+    -- Sending messages is as easy as:
+    void $ sendStreamMessage "haskell"              -- message stream
+                             "hzulip"               -- message topic
+                             "Message from Haskell" -- message content
 
-    -- Listening for events is as easy as registering a callback function. As
-    -- long as your bot is subscribed to the events it expects to listen for,
-    -- it'll get away with:
-    onNewEvent z ["message"] $ \msg -> do
+    -- Listening for events works with a callback based API. More
+    -- complex patterns for concurrent message handling can be created
+    -- from it. As long as your zulip user is already subscribed to
+    -- streams, this is all you have to do:
+    onNewEvent ["message"] $ \msg -> do
+        liftIO $ putStrLn "Got a new message!"
         let usr = messageSender msg
-            usrName = userFullName usr
-            usrEmail = userEmail usr
+            fn = userFullName usr
+            e = userEmail usr
 
-        sendPrivateMessage z [usrEmail] $ "Thanks for the message " ++
-                                          usrName ++ "!!"
-
+       sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
 ```
 
 ## Documentation
@@ -53,6 +54,8 @@ and build something that's actually useful.
 
 Now there's also a better implementation of the example evaluation bot at
 [zulip-eval-bot](https://github.com/yamadapc/zulip-eval-bot).
+
+They are currently using an older version of the `hzulip` package though.
 
 ## License
 This code is licensed under the GPLv2 license for Pedro Tacla Yamada. Plese
