@@ -1,4 +1,52 @@
 {-# LANGUAGE OverloadedStrings #-}
+-------------------------------------------------------------------------------
+-- |
+-- Module      : Butter.Core.Tracker.Client
+-- Copyright   : Pedro Tacla Yamada
+-- License     : MIT (see LICENSE)
+--
+-- Maintainer  : Pedro Tacla Yamada <tacla.yamada@gmail.com>
+-- Stability   : unstable
+-- Portability : unportable
+--
+-- A Wrapper library for the Zulip API. Works on top of a 'ReaderT' monad
+-- transformer, holding a 'ZulipOptions' object, which should hold the
+-- state and configuration for the API client.
+--
+-- Using the library is made easier through a set of helper functions. This
+-- design is more concise and than passing around configuration variables;
+-- one could easily bypass it with the use of 'runZulip', though that isn't
+-- recommended.
+--
+-- Example usage:
+-- > import Web.HZulip
+-- >
+-- > main :: IO ()
+-- > main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
+-- >     -- Since we are inside the ZulipM ReaderT monad transformer, we
+-- >     -- don't need to pass options around. The above function already
+-- >     -- created an HTTP manager, for connection pooling and wrapped the
+-- >     -- default configuration options with the Monad:
+-- >     print =<< getSubscriptions
+-- >     -- >> ["haskell"]
+-- >
+-- >     -- Sending messages is as easy as:
+-- >     void $ sendStreamMessage "haskell"              -- message stream
+-- >                              "hzulip"               -- message topic
+-- >                              "Message from Haskell" -- message content
+-- >
+-- >     -- Listening for events works with a callback based API. More
+-- >     -- complex patterns for concurrent message handling can be created
+-- >     -- from it. As long as your zulip user is already subscribed to
+-- >     -- streams, this is all you have to do:
+-- >     onNewEvent ["message"] $ \msg -> do
+-- >         liftIO $ putStrLn "Got a new message!"
+-- >         let usr = messageSender msg
+-- >             fn = userFullName usr
+-- >             e = userEmail usr
+-- >
+-- >        sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+--
 module Web.HZulip ( Event(..)
                   , Message(..)
                   , Queue(..)
@@ -10,10 +58,13 @@ module Web.HZulip ( Event(..)
                   , defaultBaseUrl
                   , eventTypes
                   , getEvents
+                  , getStreams
+                  , getStreamSubscribers
                   , getSubscriptions
                   , onNewEvent
                   , onNewMessage
                   , registerQueue
+                  , removeSubscriptions
                   , runZulip
                   , sendMessage
                   , sendPrivateMessage
@@ -42,7 +93,7 @@ import Network.HTTP.Client (Request, applyBasicAuth, httpLbs, method,
                             newManager, parseUrl, responseBody, setQueryString)
 import Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
-import Network.HTTP.Types (Method, methodGet, methodPost)
+import Network.HTTP.Types (Method, methodGet, methodPatch, methodPost)
 
 import Web.HZulip.Types as ZT
 
@@ -118,8 +169,8 @@ sendStreamMessage s = sendMessage "stream" [s]
 -- |
 -- This registers a new event queue with the zulip API. It's a lower level
 -- function, which shouldn't be used unless you know what you're doing. It
--- takes a `ZulipClient`, a list of names of the events you want to listen
--- for and whether you'd like for the content to be rendered in HTML format
+-- takes a list of names of the events you want to listen for and whether
+-- you'd like for the content to be rendered in HTML format
 -- (if you set the last parameter to `False` it will be kept as typed, in
 -- markdown format)
 registerQueue :: [String] -> Bool -> ZulipM Queue
@@ -135,6 +186,21 @@ registerQueue evTps mdn = do
       in return $ Queue qid lid
 
 -- |
+-- Get a list of all the public streams
+getStreams :: ZulipM [String]
+getStreams = do
+    r <- zulipMakeRequest Streams methodGet []
+    return $ map T.unpack $ r ^.. key "streams" . values
+                                . key "name" . _String
+
+-- |
+-- Get all the user emails subscribed to a stream
+getStreamSubscribers :: String -> ZulipM [String]
+getStreamSubscribers s = do
+    r <- zulipMakeRequest' ("/streams/" ++ s ++ "/members") methodGet []
+    return $ map T.unpack $ r ^.. key "subscribers" . values . _String
+
+-- |
 -- Get a list of the streams the client is currently subscribed to.
 getSubscriptions :: ZulipM [String]
 getSubscriptions = do
@@ -148,6 +214,13 @@ addSubscriptions :: [String] -> ZulipM ()
 addSubscriptions sbs = do
     let form = [ ("subscriptions", show sbs) ]
     void $ zulipMakeRequest Subscriptions methodPost form
+
+-- |
+-- Remove one or more Stream subscriptions from the client
+removeSubscriptions :: [String] -> ZulipM ()
+removeSubscriptions sbs = do
+    let form = [ ("delete", show sbs ) ]
+    void $ zulipMakeRequest Subscriptions methodPatch form
 
 -- |
 -- Fetches new set of events from a `Queue`.
@@ -192,16 +265,24 @@ onNewMessage f = onNewEvent ["message"] $ \evt ->
 -- Private functions:
 -------------------------------------------------------------------------------
 
-data Endpoint = Messages | Register | Events | Subscriptions
+data Endpoint = Messages | Register | Events | Subscriptions | Streams
 type RequestData = [(T.Text, String)]
 
+-- |
+-- Makes a request to some 'Endpoint' in the zulip API
 zulipMakeRequest :: Endpoint -> Method -> RequestData -> ZulipM BL.ByteString
-zulipMakeRequest e m d = do
+zulipMakeRequest e = zulipMakeRequest' (endpointSuffix e)
+
+-- |
+-- Makes a request to some untyped URL in the zulip API. Serializes the
+-- 'RequestData' as a QueryString on GET requests and as form-data
+-- otherwise
+zulipMakeRequest' :: String -> Method -> RequestData -> ZulipM BL.ByteString
+zulipMakeRequest' u m d = do
     z <- ask
-    let url = clientBaseUrl z ++ endpointSuffix e
-    req  <- liftIO $ parseUrl url
-    req' <- prepareRequest d req { method = m }
-    res  <- liftIO $ httpLbs req' $ clientManager z
+    req  <- liftIO $ parseUrl (clientBaseUrl z ++ u)
+    req' <- prepareRequest d req
+    res  <- liftIO $ httpLbs req' { method = m } $ clientManager z
     return $ responseBody res
 
 -- |
@@ -225,7 +306,8 @@ prepareRequest d r =
     applyAuth =<< formDataBody (map (uncurry partBS . second C.pack) d) r
 
 -- |
--- Constructs the `Wreq` HTTP request `Options` object for a `ZulipClient`
+-- Adds authentication to a 'Request' with the configuration in the 'ZulipM'
+-- monad
 applyAuth :: Request -> ZulipM Request
 applyAuth req = do
       ZulipOptions e k _ _ <- ask
@@ -243,3 +325,4 @@ endpointSuffix Messages      = "/messages"
 endpointSuffix Events        = "/events"
 endpointSuffix Register      = "/register"
 endpointSuffix Subscriptions = "/users/me/subscriptions"
+endpointSuffix Streams       = "/streams"
