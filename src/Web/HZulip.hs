@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 -------------------------------------------------------------------------------
 -- |
--- Module      : Butter.Core.Tracker.Client
+-- Module      : Web.HZulip
 -- Copyright   : Pedro Tacla Yamada
 -- License     : MIT (see LICENSE)
 --
