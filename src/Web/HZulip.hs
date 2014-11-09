@@ -18,35 +18,8 @@
 -- one could easily bypass it with the use of 'runZulip', though that isn't
 -- recommended.
 --
--- Example usage:
--- > import Web.HZulip
--- >
--- > main :: IO ()
--- > main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
--- >     -- Since we are inside the ZulipM ReaderT monad transformer, we
--- >     -- don't need to pass options around. The above function already
--- >     -- created an HTTP manager, for connection pooling and wrapped the
--- >     -- default configuration options with the Monad:
--- >     print =<< getSubscriptions
--- >     -- >> ["haskell"]
--- >
--- >     -- Sending messages is as easy as:
--- >     void $ sendStreamMessage "haskell"              -- message stream
--- >                              "hzulip"               -- message topic
--- >                              "Message from Haskell" -- message content
--- >
--- >     -- Listening for events works with a callback based API. More
--- >     -- complex patterns for concurrent message handling can be created
--- >     -- from it. As long as your zulip user is already subscribed to
--- >     -- streams, this is all you have to do:
--- >     onNewMessage $ \msg -> do
--- >         liftIO $ putStrLn "Got a new message!"
--- >         let usr = messageSender msg
--- >             fn = userFullName usr
--- >             e = userEmail usr
--- >
--- >        sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
---
+-- Examples are available at the github repository for this project at:
+-- https://github.com/yamadapc/hzulip
 module Web.HZulip ( Event(..)
                   , Message(..)
                   , Queue(..)
