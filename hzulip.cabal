@@ -1,5 +1,5 @@
 name:                hzulip
-version:             1.0.0.0
+version:             1.1.0.0
 synopsis:            A haskell wrapper for the Zulip API.
 description:         This a Zulip API wrapper for Haskell.
 homepage:            https://github.com/yamadapc/hzulip
@@ -11,6 +11,10 @@ copyright:           Pedro Tacla Yamada <tacla.yamada@gmail.com> 2014
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+
+source-repository head
+  type:     git
+  location: git://github.com/yamadapc/hzulip.git
 
 library
   exposed-modules:     Web.HZulip

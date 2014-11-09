@@ -39,7 +39,7 @@
 -- >     -- complex patterns for concurrent message handling can be created
 -- >     -- from it. As long as your zulip user is already subscribed to
 -- >     -- streams, this is all you have to do:
--- >     onNewEvent ["message"] $ \msg -> do
+-- >     onNewMessage $ \msg -> do
 -- >         liftIO $ putStrLn "Got a new message!"
 -- >         let usr = messageSender msg
 -- >             fn = userFullName usr
@@ -55,6 +55,7 @@ module Web.HZulip ( Event(..)
                   , EventCallback
                   , MessageCallback
                   , addSubscriptions
+                  , addAllSubscriptions
                   , defaultBaseUrl
                   , eventTypes
                   , getEvents
@@ -76,10 +77,8 @@ module Web.HZulip ( Event(..)
   where
 
 import Control.Arrow (second)
-import Control.Concurrent (threadDelay)
 import Control.Lens ((^..))
 import Control.Monad (void)
-import Control.Monad.Catch (SomeException, handleAll)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask, runReaderT)
 import Data.Aeson (decode)
@@ -209,6 +208,11 @@ getSubscriptions = do
                                 . key "name" . _String
 
 -- |
+-- Subscribes the client to all streams
+addAllSubscriptions :: ZulipM ()
+addAllSubscriptions = getStreams >>= addSubscriptions
+
+-- |
 -- Add new Stream subscriptions to the client.
 addSubscriptions :: [String] -> ZulipM ()
 addSubscriptions sbs = do
@@ -239,16 +243,14 @@ getEvents q b = do
 
 -- |
 -- Registers an event callback for specified events and keeps executing it
--- over events as they come in. Will loop forever
+-- over events as they come in
 onNewEvent :: [String] -> EventCallback -> ZulipM ()
 onNewEvent etypes f = do
     q <- registerQueue etypes False
-    handleAll (tryAgain q) (loop q)
-  where tryAgain :: Queue -> SomeException -> ZulipM ()
-        tryAgain q _ = do
-            liftIO (threadDelay 1000000)
-            handleAll (tryAgain q) (loop q)
-        loop q = getEvents q False >>=
+    -- We let it fail here, so that failures can be catched and handled by
+    -- the user
+    loop q
+  where loop q = getEvents q False >>=
                  \(q', evts) -> mapM_ f evts >>
                                 loop q'
 

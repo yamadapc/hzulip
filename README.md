@@ -28,11 +28,11 @@ main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
                              "hzulip"               -- message topic
                              "Message from Haskell" -- message content
 
-    -- Listening for events works with a callback based API. More
-    -- complex patterns for concurrent message handling can be created
-    -- from it. As long as your zulip user is already subscribed to
-    -- streams, this is all you have to do:
-    onNewEvent ["message"] $ \msg -> do
+    -- Before receiving messages, our client needs to be subscribed to streams
+    addAllSubscriptions
+
+    -- Listening for events works with a callback based API:
+    onNewMessage $ \msg -> do
         liftIO $ putStrLn "Got a new message!"
         let usr = messageSender msg
             fn = userFullName usr
