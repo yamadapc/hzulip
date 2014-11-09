@@ -79,6 +79,7 @@ module Web.HZulip ( Event(..)
 import Control.Arrow (second)
 import Control.Lens ((^..))
 import Control.Monad (void)
+import Control.Monad.Catch (catch, throwM)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask, runReaderT)
 import Data.Aeson (Value(..), decode, encode)
@@ -89,8 +90,9 @@ import qualified Data.ByteString.Lazy.Char8 as CL (unpack)
 import Data.List (intercalate)
 import Data.Text as T (Text, unpack)
 import Data.Text.Encoding as T (encodeUtf8)
-import Network.HTTP.Client (Request, applyBasicAuth, httpLbs, method,
-                            newManager, parseUrl, responseBody, setQueryString)
+import Network.HTTP.Client (Request, HttpException(..), applyBasicAuth, httpLbs,
+                            method, newManager, parseUrl, responseBody,
+                            setQueryString)
 import Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types (Method, methodGet, methodPatch, methodPost)
@@ -252,9 +254,13 @@ onNewEvent etypes f = do
     -- We let it fail here, so that failures can be catched and handled by
     -- the user
     loop q
-  where loop q = getEvents q False >>=
-                 \(q', evts) -> mapM_ f evts >>
-                                loop q'
+  where getEvents' q = catch (getEvents q False) (onTimeout q)
+        loop q = do
+            (q', evts) <- getEvents' q
+            mapM_ f evts
+            loop q'
+        onTimeout q ResponseTimeout = getEvents' q
+        onTimeout _ ex = throwM ex
 
 -- |
 -- Registers a callback to be executed whenever a message comes in. Will
