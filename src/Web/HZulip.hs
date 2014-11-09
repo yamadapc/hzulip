@@ -81,11 +81,12 @@ import Control.Lens ((^..))
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Reader (ask, runReaderT)
-import Data.Aeson (decode)
+import Data.Aeson (Value(..), decode, encode)
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.ByteString.Char8 as C (pack)
 import qualified Data.ByteString.Lazy.Char8 as CL (unpack)
+import Data.List (intercalate)
 import Data.Text as T (Text, unpack)
 import Data.Text.Encoding as T (encodeUtf8)
 import Network.HTTP.Client (Request, applyBasicAuth, httpLbs, method,
@@ -216,8 +217,9 @@ addAllSubscriptions = getStreams >>= addSubscriptions
 -- Add new Stream subscriptions to the client.
 addSubscriptions :: [String] -> ZulipM ()
 addSubscriptions sbs = do
-    let form = [ ("subscriptions", show sbs) ]
-    void $ zulipMakeRequest Subscriptions methodPost form
+    let sbs' = intercalate "," $ map (\s -> "{\"name\":" ++ show s ++ "}") sbs
+        form = [ ("add", "[" ++ sbs' ++ "]") ]
+    void $ zulipMakeRequest Subscriptions methodPatch form
 
 -- |
 -- Remove one or more Stream subscriptions from the client
@@ -285,7 +287,7 @@ zulipMakeRequest' :: String -> Method -> RequestData -> ZulipM BL.ByteString
 zulipMakeRequest' u m d = do
     z <- ask
     req  <- liftIO $ parseUrl (clientBaseUrl z ++ u)
-    req' <- prepareRequest d req
+    req' <- prepareRequest d req m
     res  <- liftIO $ httpLbs req' { method = m } $ clientManager z
     return $ responseBody res
 
@@ -301,12 +303,12 @@ decodeResponse b = case decode b of
 -- Adds a QueryString or FormData body, represented by a list of tuples,
 -- and authenticates the request, with the current zulip state's
 -- credentials.
-prepareRequest :: RequestData -> Request -> ZulipM Request
-prepareRequest [] r = applyAuth r
-prepareRequest d r | method r == methodGet =
+prepareRequest :: RequestData -> Request -> Method -> ZulipM Request
+prepareRequest [] r _ = applyAuth r
+prepareRequest d r m | m == methodGet =
     applyAuth $ setQueryString (map helper d) r
   where helper (k, v) = (encodeUtf8 k, Just $ C.pack v)
-prepareRequest d r =
+prepareRequest d r _ =
     applyAuth =<< formDataBody (map (uncurry partBS . second C.pack) d) r
 
 -- |

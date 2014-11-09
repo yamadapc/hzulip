@@ -26,7 +26,7 @@ spec = beforeAll withServer $ do
     describe "addSubscriptions" $
         it "doesn't throw an exception" $ do
             z <- zulipOptions user key
-            withZulip z { clientBaseUrl = "http://localhost:3000" } $ do
+            withZulip z { clientBaseUrl = "http://localhost:3000" } $
                 addSubscriptions ["clojure"]
 
     describe "getSubscriptions" $
@@ -39,7 +39,7 @@ spec = beforeAll withServer $ do
     describe "removeSubscriptions" $
         it "doesn't throw an exception" $ do
             z <- zulipOptions user key
-            withZulip z { clientBaseUrl = "http://localhost:3000" } $ do
+            withZulip z { clientBaseUrl = "http://localhost:3000" } $
                 removeSubscriptions ["here"]
 
     describe "getStreamSubscribers" $
