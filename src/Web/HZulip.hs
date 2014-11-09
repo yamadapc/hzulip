@@ -73,6 +73,9 @@ module Web.HZulip ( Event(..)
                   , withZulip
                   , withZulipCreds
                   , zulipOptions
+
+                  , lift
+                  , ask
                   )
   where
 
