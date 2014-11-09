@@ -1,0 +1,27 @@
+name:                zulip-bot-examples
+version:             0.1.0.0
+author:              Pedro Tacla Yamada
+maintainer:          tacla.yamada@gmail.com
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable zulip-echo-bot
+  main-is:             ZulipEchoBot.hs
+  build-depends:       base >=4 && <5
+                     , hzulip >= 1.1.0.2
+                     , lifted-async
+                     , exceptions >=0.6
+                     , mtl
+                     , transformers
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable zulip-logger
+  main-is:             ZulipLogger.hs
+  build-depends:       base >=4 && <5
+                     , hzulip >= 1.1.0.2
+                     , exceptions >=0.6
+                     , mtl
+                     , transformers
+  hs-source-dirs:      src
+  default-language:    Haskell2010

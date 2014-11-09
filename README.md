@@ -11,6 +11,7 @@ A haskell wrapper for the zulip API. This is very much a work in progress.
 Simply installing through cabal with `cabal install hzulip` should do it.
 
 ## Usage
+### Getting started
 ```haskell
 import Web.HZulip
 
@@ -33,7 +34,7 @@ main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
 
     -- Listening for events works with a callback based API:
     onNewMessage $ \msg -> do
-        liftIO $ putStrLn "Got a new message!"
+        lift $ putStrLn "Got a new message!"
         let usr = messageSender msg
             fn = userFullName usr
             e = userEmail usr
@@ -46,16 +47,17 @@ The best resource on this is naturally its haddock documentation, available at
 [yamadapc.github.io/hzulip](https://yamadapc.github.io/hzulip). You might also
 be interested in the [zulip API documentation](https://zulip.com/api/) as well.
 
-There's also an example bot, which does remote code evaluation on the
-`bot-example` directory. It's far from perfect/complete, but since I really have
-no interest in writting bots, as much as I'd have in simply hooking existing
-tools into `zulip`, it's left as is. It shouldn't be too hard to improve on it
-and build something that's actually useful.
+## Examples
+There are a couple of example bots and applications on the
+[`examples`](/examples) directory. If you're getting started with Haskell, I'd
+suggest looking at the [`ZulipLogger`](/examples/src/ZulipLogger.hs) and
+[`ZulipEchoBot`](/examples/src/ZulipEchoBot) which show of basic API usage
+with minimal noise from anything else.
 
-Now there's also a better implementation of the example evaluation bot at
-[zulip-eval-bot](https://github.com/yamadapc/zulip-eval-bot).
-
-They are currently using an older version of the `hzulip` package though.
+## A remote evaluation bot
+Though slightly outdated, there's a remote evaluation Zulip bot using this
+library at [zulip-eval-bot](https://github.com/yamadapc/zulip-eval-bot), which
+might be worth taking a look at as well.
 
 ## License
 This code is licensed under the GPLv2 license for Pedro Tacla Yamada. Plese
