@@ -25,6 +25,7 @@ module Web.HZulip ( Event(..)
                   , Queue(..)
                   , User(..)
                   , ZulipOptions(..)
+                  , ZulipM
                   , EventCallback
                   , MessageCallback
                   , addSubscriptions
@@ -43,6 +44,8 @@ module Web.HZulip ( Event(..)
                   , sendMessage
                   , sendPrivateMessage
                   , sendStreamMessage
+                  , sourceZulipEvents
+                  , sourceZulipMessages
                   , withZulip
                   , withZulipCreds
                   , zulipOptions
@@ -53,17 +56,21 @@ module Web.HZulip ( Event(..)
   where
 
 import Control.Arrow (second)
+import Control.Concurrent.Lifted (fork)
+import Control.Concurrent.STM (TBQueue, atomically, writeTBQueue)
 import Control.Lens ((^..))
 import Control.Monad (void)
 import Control.Monad.Catch (catch, throwM)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Reader (ask, runReaderT)
-import Data.Aeson (Value(..), decode, encode)
+import Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
+import Data.Aeson (decode)
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.ByteString.Char8 as C (pack)
 import qualified Data.ByteString.Lazy.Char8 as CL (unpack)
+import Data.Conduit (Source)
+import Data.Conduit.Async (gatherFrom)
 import Data.List (intercalate)
 import Data.Text as T (Text, unpack)
 import Data.Text.Encoding as T (encodeUtf8)
@@ -249,6 +256,24 @@ onNewMessage f = onNewEvent ["message"] $ \evt ->
   -- this is more reasonable.
   maybe (return ()) f (eventMessage evt)
 
+-- Higher-level conduit interface:
+-------------------------------------------------------------------------------
+
+-- |
+-- Creates a conduit 'Source' of zulip events
+sourceZulipEvents :: Int      -- ^ The size of the event buffer
+                  -> [String] -- ^ A list of event types to subscribe to
+                  -> Source (ReaderT ZulipOptions IO) Event
+sourceZulipEvents bufSize evts = gatherFrom bufSize $ \q ->
+    void $ fork $ onNewEvent evts (zulipWriteTBQueueIO q)
+
+-- |
+-- Creates a conduit 'Source' of zulip messages
+sourceZulipMessages :: Int -- ^ The size of the event buffer
+                    -> Source (ReaderT ZulipOptions IO) Message
+sourceZulipMessages bufSize = gatherFrom bufSize $ \q ->
+    void $ fork $ onNewMessage (zulipWriteTBQueueIO q)
+
 -- Private functions:
 -------------------------------------------------------------------------------
 
@@ -315,3 +340,8 @@ endpointSuffix Events        = "/events"
 endpointSuffix Register      = "/register"
 endpointSuffix Subscriptions = "/users/me/subscriptions"
 endpointSuffix Streams       = "/streams"
+
+-- |
+-- Lifted IO version of 'writeTBQueue'
+zulipWriteTBQueueIO :: TBQueue a -> a -> ZulipM ()
+zulipWriteTBQueueIO q x = lift $ atomically $ writeTBQueue q x
