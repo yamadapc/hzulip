@@ -11,7 +11,7 @@ import Network.HTTP.Client (Manager)
 -- |
 -- The Monad in which Zulip API actions happen in. This is a 'ReaderT'
 -- alias, so it's also a instance of 'MonadTrans', 'MonadIO' etc.
-type ZulipM a = ReaderT ZulipOptions IO a
+type ZulipM = ReaderT ZulipOptions IO
 
 -- |
 -- Represents a Zulip API client

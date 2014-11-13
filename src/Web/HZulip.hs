@@ -44,6 +44,7 @@ module Web.HZulip ( Event(..)
                   , sendMessage
                   , sendPrivateMessage
                   , sendStreamMessage
+                  , sinkZulipMessages
                   , sourceZulipEvents
                   , sourceZulipMessages
                   , withZulip
@@ -56,20 +57,19 @@ module Web.HZulip ( Event(..)
   where
 
 import Control.Arrow (second)
-import Control.Concurrent.Lifted (fork)
 import Control.Concurrent.STM (TBQueue, atomically, writeTBQueue)
 import Control.Lens ((^..))
 import Control.Monad (void)
 import Control.Monad.Catch (catch, throwM)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Reader (ReaderT, ask, runReaderT)
+import Control.Monad.Trans.Reader (ask, runReaderT)
 import Data.Aeson (decode)
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.ByteString.Char8 as C (pack)
 import qualified Data.ByteString.Lazy.Char8 as CL (unpack)
-import Data.Conduit (Source)
+import Data.Conduit (Sink, Source, await)
 import Data.Conduit.Async (gatherFrom)
 import Data.List (intercalate)
 import Data.Text as T (Text, unpack)
@@ -195,9 +195,13 @@ getSubscriptions = do
                                 . key "name" . _String
 
 -- |
--- Subscribes the client to all streams
-addAllSubscriptions :: ZulipM ()
-addAllSubscriptions = getStreams >>= addSubscriptions
+-- Subscribes the client to all available streams and returns all the
+-- stream names
+addAllSubscriptions :: ZulipM [String]
+addAllSubscriptions = do
+    ss <- getStreams
+    addSubscriptions ss
+    return ss
 
 -- |
 -- Add new Stream subscriptions to the client.
@@ -260,19 +264,29 @@ onNewMessage f = onNewEvent ["message"] $ \evt ->
 -------------------------------------------------------------------------------
 
 -- |
+-- A sink representation of the zulip messaging API, takes a tuple with the
+-- arguments for 'sendMessage' and sends it
+sinkZulipMessages :: Sink (String, [String], String, String) ZulipM ()
+sinkZulipMessages = loop
+  where loop = await >>= maybe (return ())
+                               (\(w, x, y, z) -> do
+                                    void $ lift $ sendMessage w x y z
+                                    loop)
+
+-- |
 -- Creates a conduit 'Source' of zulip events
 sourceZulipEvents :: Int      -- ^ The size of the event buffer
                   -> [String] -- ^ A list of event types to subscribe to
-                  -> Source (ReaderT ZulipOptions IO) Event
-sourceZulipEvents bufSize evts = gatherFrom bufSize $ \q ->
-    void $ fork $ onNewEvent evts (zulipWriteTBQueueIO q)
+                  -> Source ZulipM Event
+sourceZulipEvents bufSize evts = gatherFrom bufSize $
+    onNewEvent evts . zulipWriteTBQueueIO
 
 -- |
 -- Creates a conduit 'Source' of zulip messages
 sourceZulipMessages :: Int -- ^ The size of the event buffer
-                    -> Source (ReaderT ZulipOptions IO) Message
-sourceZulipMessages bufSize = gatherFrom bufSize $ \q ->
-    void $ fork $ onNewMessage (zulipWriteTBQueueIO q)
+                    -> Source ZulipM Message
+sourceZulipMessages bufSize = gatherFrom bufSize $
+    onNewMessage . zulipWriteTBQueueIO
 
 -- Private functions:
 -------------------------------------------------------------------------------

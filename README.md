@@ -54,6 +54,13 @@ suggest looking at the [`ZulipLogger`](/examples/src/ZulipLogger.hs) and
 [`ZulipEchoBot`](/examples/src/ZulipEchoBot) which show of basic API usage
 with minimal noise from anything else.
 
+## A higher-level API
+A [`Conduit`](https://www.fpcomplete.com/user/snoyberg/library-documentation/conduit-overview)
+API is provided as well and an "echo" example is available for it in the
+examples directory. You can compare the evented implementation and see which you
+like best. Right now using streams to handle output is a bit unhandy, but it
+provides a nice composable high-level interface for the events.
+
 ## A remote evaluation bot
 Though slightly outdated, there's a remote evaluation Zulip bot using this
 library at [zulip-eval-bot](https://github.com/yamadapc/zulip-eval-bot), which
