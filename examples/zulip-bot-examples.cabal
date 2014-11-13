@@ -25,3 +25,15 @@ executable zulip-logger
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
+
+executable zulip-cli
+  main-is:             ZulipCli.hs
+  build-depends:       base >=4 && <5
+                     , ansi-terminal >=0.6 && <0.7
+                     , split >=0.2 && <1
+                     , lifted-async >=0.2 && <0.3
+                     , terminal-size >=0.3 && <0.4
+                     , hzulip >= 1.1.0.2
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
