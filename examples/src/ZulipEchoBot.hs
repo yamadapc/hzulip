@@ -5,18 +5,15 @@ import Control.Concurrent.Async.Lifted (async)
 import Control.Exception (SomeException)
 import Control.Monad (void, when)
 import Control.Monad.Catch (catchAll)
-import Control.Monad.Trans (lift)
-import Control.Monad.Reader (ask)
 import Data.List (intercalate, isPrefixOf)
 import System.Environment (getEnv)
 
 import Web.HZulip
-import Web.HZulip.Types
 
 main :: IO ()
 main = withZulipEnv $ do
     lift $ putStrLn "Subscribing to all streams..."
-    addAllSubscriptions
+    void addAllSubscriptions
 
     lift $ putStrLn "Echoing..."
     catchAll startEchoer onZulipError

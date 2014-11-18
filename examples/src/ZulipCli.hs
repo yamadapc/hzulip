@@ -13,6 +13,7 @@
 -- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 --
 import Control.Concurrent.Async.Lifted (async, wait)
+import Control.Exception.Lifted (SomeException(..), handle)
 import Data.List (find)
 import Data.List.Split (chunksOf)
 import System.Console.ANSI (Color(..), ColorIntensity(..), ConsoleIntensity(..),
@@ -32,9 +33,13 @@ main = withZulipEnv $ do
     let streams = streamsFromNames streamNames
     lift $ printStreamTable streams
 
-    end <- async $ onNewMessage (\msg -> lift $ printMessage streams msg)
-    lift $ logInfo "Listening for messages"
-    wait end
+    start streams
+  where start st = do
+            end <- async $ onNewMessage (lift . printMessage st)
+            lift $ logInfo "Listening for messages"
+            handle
+                (\e -> lift (print (e :: SomeException)) >> start st)
+                (wait end)
 
 withZulipEnv :: ZulipM a -> IO a
 withZulipEnv action = do

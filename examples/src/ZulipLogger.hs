@@ -2,17 +2,16 @@ module Main
   where
 
 import Control.Exception (SomeException)
+import Control.Monad (void)
 import Control.Monad.Catch (catchAll)
-import Control.Monad.Trans (lift)
 import System.Environment (getEnv)
 
 import Web.HZulip
-import Web.HZulip.Types
 
 main :: IO ()
 main = withZulipEnv $ do
     lift $ putStrLn "Subscribing to all streams..."
-    addAllSubscriptions
+    void addAllSubscriptions
 
     lift $ putStrLn "Logging:"
     catchAll startLogger onZulipError
