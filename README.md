@@ -5,7 +5,7 @@ hzulip
 [![Dependencies Status](http://img.shields.io/hackage-deps/v/hzulip.svg)](http://packdeps.haskellers.com/feed?needle=hzulip)
 [![Gitter chat](https://badges.gitter.im/yamadapc/hzulip.png)](https://gitter.im/yamadapc/hzulip)
 - - -
-A haskell wrapper for the zulip API. This is very much a work in progress.
+A haskell wrapper for the zulip API.
 
 ## Installing
 Simply installing through cabal with `cabal install hzulip` should do it.
