@@ -49,17 +49,20 @@ be interested in the [zulip API documentation](https://zulip.com/api/) as well.
 
 ## Examples
 There are a couple of example bots and applications on the
-[`examples`](/examples) directory. If you're getting started with Haskell, I'd
-suggest looking at the [`ZulipLogger`](/examples/src/ZulipLogger.hs) and
-[`ZulipEchoBot`](/examples/src/ZulipEchoBot) which show of basic API usage
+[`examples`](https://github.com/yamadapc/hzulip/tree/master/examples) directory. If you're getting started with Haskell, I'd
+suggest looking at the [`ZulipLogger`](https://github.com/yamadapc/hzulip/blob/master/examples/src/ZulipLogger.hs) and
+[`ZulipEchoBot`](https://github.com/yamadapc/hzulip/blob/master/examples/src/ZulipEchoBot.hs) which show of basic API usage
 with minimal noise from anything else.
 
 ## A higher-level API
 A [`Conduit`](https://www.fpcomplete.com/user/snoyberg/library-documentation/conduit-overview)
 API is provided as well and an "echo" example is available for it in the
-examples directory. You can compare the evented implementation and see which you
+examples directory; [here](https://github.com/yamadapc/hzulip/blob/master/examples/src/ZulipConduitBot.hs). You can compare the evented implementation and see which you
 like best. Right now using streams to handle output is a bit unhandy, but it
 provides a nice composable high-level interface for the events.
+
+- - -
+Other than the echo and logger examples; there's also a pretty logger at [`ZulipCli`](https://github.com/yamadapc/hzulip/blob/master/examples/src/ZulipCli.hs).
 
 ## A remote evaluation bot
 Though slightly outdated, there's a remote evaluation Zulip bot using this
