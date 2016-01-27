@@ -40,6 +40,10 @@ library
 test-suite hzulip-spec
   type:                exitcode-stdio-1.0
   main-is:             Spec.hs
+  other-modules:       Web.HZulip
+                     , Web.HZulip.Types
+                     , HZulipSpec
+                     , HZulipTypesSpec
   hs-source-dirs:      src
                      , test
   build-depends:       base >=4 && <5
