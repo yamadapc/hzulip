@@ -72,3 +72,6 @@ might be worth taking a look at as well.
 ## License
 This code is licensed under the GPLv2 license for Pedro Tacla Yamada. Plese
 refer to [LICENSE](/LICENSE) for more information.
+
+## Donations
+Would you like to buy me a beer? Send bitcoin to 3JjxJydvoJjTrhLL86LGMc8cNB16pTAF3y
