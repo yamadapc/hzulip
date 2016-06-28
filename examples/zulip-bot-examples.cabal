@@ -1,7 +1,12 @@
 name:                zulip-bot-examples
 version:             0.1.0.0
+synopsis:            Examples for hzulip
+description:         hzulip bot examples; see the GitHub page
+license:             GPL-2
+license-file:        LICENSE
 author:              Pedro Tacla Yamada
 maintainer:          tacla.yamada@gmail.com
+category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
 
