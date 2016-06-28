@@ -1,8 +1,7 @@
 language: haskell
-ghc: 7.8
+# ghc: 7.8
 script:
-- cabal configure --enable-tests && cabal build && cabal test --show-details=always
-  --test-option=--color
+- stack test
 after_success:
 - ".ci/deploy-documentation.sh"
 env:
