@@ -69,8 +69,6 @@ data Message = Message { messageId               :: Int
 
                        , messageSender           :: User
 
-                       , messageGravatarHash     :: String
-
                        , messageRecipientId      :: Int
                        , messageClient           :: String
                        , messageSubjectLinks     :: [String]
@@ -84,7 +82,8 @@ data Message = Message { messageId               :: Int
 data User = User { userId        :: Int
                  , userFullName  :: String
                  , userEmail     :: String
-                 , userDomain    :: String
+                 , userRealm     :: Maybe String
+                 -- ^ `display_recipient` doesn't have this, `message_sender` does
                  , userShortName :: String
                  }
   deriving (Eq, Ord, Show)
@@ -141,11 +140,11 @@ instance FromJSON Message where
                              o .: "sender_id"         <*>
                              o .: "sender_full_name"  <*>
                              o .: "sender_email"      <*>
-                             o .: "sender_domain"     <*>
+                             -- sender_realm_str was sender_domain in Zulip < 1.6,
+                             -- see https://github.com/zulip/zulip/commit/b416587aabec1e4ccf679652b7f3d61a6788317a
+                             o .:? "sender_realm_str" <*>
                              o .: "sender_short_name"
                            ) <*>
-
-                           o .: "gravatar_hash"     <*>
 
                            o .: "recipient_id"      <*>
                            o .: "client"            <*>
@@ -158,7 +157,7 @@ instance FromJSON User where
                            o .: "id" <*>
                            o .: "full_name"  <*>
                            o .: "email"      <*>
-                           o .: "domain"     <*>
+                           pure Nothing      <*>
                            o .: "short_name"
     parseJSON _ = mzero
 
