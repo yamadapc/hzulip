@@ -22,7 +22,7 @@ spec = do
             decode userJSON `shouldBe` Just User { userId = 1234
                                                  , userFullName = "Joe Doe"
                                                  , userEmail = "asf@asdf.com"
-                                                 , userDomain = ""
+                                                 , userRealm = Nothing
                                                  , userShortName = "Joe"
                                                  }
 
@@ -38,10 +38,9 @@ spec = do
                              , messageSender = User { userId = 13215
                                                     , userFullName = "Othello Bot"
                                                     , userEmail = "othello-bot@example.com"
-                                                    , userDomain = "example.com"
+                                                    , userRealm = Just "example.com"
                                                     , userShortName = "othello-bot"
                                                     }
-                             , messageGravatarHash = "17d93357cca1e793739836ecbc7a9bf7"
                              , messageRecipientId = 12314
                              , messageClient = "website"
                              , messageSubjectLinks = []
@@ -57,7 +56,7 @@ spec = do
                              , messageTimestamp = 1375978403
                              , messageDisplayRecipient =
                                  Right [ User { userFullName = "Hamlet of Denmark"
-                                              , userDomain =  "example.com"
+                                              , userRealm = Nothing
                                               , userEmail = "hamlet@example.com"
                                               , userShortName = "hamlet"
                                               , userId = 31572
@@ -66,10 +65,9 @@ spec = do
                              , messageSender = User { userId = 13215
                                                     , userFullName = "Othello Bot"
                                                     , userEmail = "othello-bot@example.com"
-                                                    , userDomain = "example.com"
+                                                    , userRealm = Just "example.com"
                                                     , userShortName = "othello-bot"
                                                     }
-                             , messageGravatarHash = "17d93357cca1e793739836ecbc7a9bf7"
                              , messageRecipientId = 12314
                              , messageClient = "website"
                              , messageSubjectLinks = []
@@ -80,7 +78,6 @@ spec = do
  "id": 1234,
  "full_name": "Joe Doe",
  "email": "asf@asdf.com",
- "domain": "",
  "short_name": "Joe"
                    }|]
         messageJSON = [r|{
@@ -91,9 +88,8 @@ spec = do
  "sender_full_name": "Othello Bot",
  "sender_email": "othello-bot@example.com",
  "sender_short_name": "othello-bot",
- "sender_domain": "example.com",
+ "sender_realm_str": "example.com",
  "content": "Something is rotten in the state of Denmark.",
- "gravatar_hash": "17d93357cca1e793739836ecbc7a9bf7",
  "recipient_id": 12314,
  "client": "website",
  "subject_links": [],
@@ -108,9 +104,8 @@ spec = do
  "sender_full_name": "Othello Bot",
  "sender_email": "othello-bot@example.com",
  "sender_short_name": "othello-bot",
- "sender_domain": "example.com",
+ "sender_realm_str": "example.com",
  "content": "Something is rotten in the state of Denmark.",
- "gravatar_hash": "17d93357cca1e793739836ecbc7a9bf7",
  "recipient_id": 12314,
  "client": "website",
  "subject_links": [],
@@ -120,7 +115,6 @@ spec = do
   "display_recipient": [
     {
       "full_name": "Hamlet of Denmark",
-      "domain": "example.com",
       "email": "hamlet@example.com",
       "short_name": "hamlet",
       "id": 31572

@@ -17,6 +17,7 @@ executable zulip-echo-bot
                      , lifted-async
                      , exceptions >=0.6
                      , mtl
+                     , text
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -24,9 +25,10 @@ executable zulip-echo-bot
 executable zulip-logger
   main-is:             ZulipLogger.hs
   build-depends:       base >=4 && <5
-                     , hzulip >= 1.1.0.2
-                     , exceptions >=0.6
+                     , hzulip
+                     , exceptions
                      , mtl
+                     , text
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010
@@ -34,23 +36,25 @@ executable zulip-logger
 executable zulip-cli
   main-is:             ZulipCli.hs
   build-depends:       base >=4 && <5
-                     , ansi-terminal >=0.6 && <0.7
+                     , ansi-terminal >=0.6 && <0.9
                      , split >=0.2 && <1
                      , lifted-async >=0.2
                      , lifted-base
                      , terminal-size >=0.3 && <0.4
-                     , hzulip >= 1.1.0.2
+                     , text
+                     , hzulip
   hs-source-dirs:      src
   default-language:    Haskell2010
 
 executable zulip-bot-conduit
   main-is:             ZulipConduitBot.hs
   build-depends:       base >=4 && <5
-                     , hzulip >= 1.1.0.2
+                     , hzulip
                      , conduit
                      , lifted-async
-                     , exceptions >=0.6
+                     , exceptions
                      , mtl
+                     , text
                      , transformers
   hs-source-dirs:      src
   default-language:    Haskell2010

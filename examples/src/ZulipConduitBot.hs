@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main
   where
 
@@ -6,6 +8,8 @@ import Control.Monad (void, when)
 import Control.Monad.Catch (catchAll)
 import Data.Conduit (($$), ($=), Conduit, awaitForever, yield)
 import Data.List (isPrefixOf)
+import Data.Text (Text)
+import qualified Data.Text as T
 import System.Environment (getEnv)
 
 import Web.HZulip
@@ -21,15 +25,15 @@ main = withZulipEnv $ do
 startEchoer :: ZulipM ()
 startEchoer = sourceZulipMessages 30 $= echoConduit $$ sinkZulipMessages
 
-echoConduit :: Conduit Message ZulipM (String, [String], String, String)
+echoConduit :: Conduit Message ZulipM (Text, [Text], Text, Text)
 echoConduit = loop
   where loop = awaitForever processMessage >> loop
         processMessage msg = do
             nr <- lift $ nonRecursive msg
             let c = messageContent msg
             lift $ lift $ putStr "here"
-            when (nr && "echo " `isPrefixOf` c) $
-                let c' = drop 5 c in case messageType msg of
+            when (nr && "echo " `T.isPrefixOf` c) $
+                let c' = T.drop 5 c in case messageType msg of
                     "stream" ->
                         let Left stream = messageDisplayRecipient msg
                             topic = messageSubject msg
@@ -51,6 +55,6 @@ nonRecursive msg = do
 
 withZulipEnv :: ZulipM a -> IO a
 withZulipEnv action = do
-    user <- getEnv "ZULIP_USER"
-    key  <- getEnv "ZULIP_KEY"
+    user <- fmap T.pack $ getEnv "ZULIP_USER"
+    key  <- fmap T.pack $ getEnv "ZULIP_KEY"
     withZulipCreds user key action

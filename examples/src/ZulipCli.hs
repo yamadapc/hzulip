@@ -12,10 +12,14 @@
 -- with this program; if not, write to the Free Software Foundation, Inc.,
 -- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 --
+{-# LANGUAGE OverloadedStrings #-}
+
 import Control.Concurrent.Async.Lifted (async, wait)
 import Control.Exception.Lifted (SomeException(..), handle)
 import Data.List (find)
 import Data.List.Split (chunksOf)
+import Data.Text (Text)
+import qualified Data.Text as T
 import System.Console.ANSI (Color(..), ColorIntensity(..), ConsoleIntensity(..),
                             ConsoleLayer(..), SGR(..), setSGR)
 import System.Console.Terminal.Size (Window(..), size)
@@ -43,8 +47,8 @@ main = withZulipEnv $ do
 
 withZulipEnv :: ZulipM a -> IO a
 withZulipEnv action = do
-    user <- getEnv "ZULIP_USER"
-    key  <- getEnv "ZULIP_KEY"
+    user <- fmap T.pack $ getEnv "ZULIP_USER"
+    key  <- fmap T.pack $ getEnv "ZULIP_KEY"
     withZulipCreds user key action
 
 printMessage :: [Stream] -> Message -> IO ()
@@ -54,28 +58,28 @@ printMessage ss msg = do
 
   case mstream of
       Just stream -> printStreamName stream
-      Nothing -> putStr $ "<" ++ streamName ++ ">"
+      Nothing -> putStr $ "<" ++ T.unpack streamName ++ ">"
 
-  putStr $ " " ++ (userEmail $ messageSender msg) ++ " said:\n"
-  putStr $ messageContent msg
+  putStr $ " " ++ T.unpack (userEmail $ messageSender msg) ++ " said:\n"
+  putStr $ T.unpack $ messageContent msg
   putStr "\n\n"
 
 -- Stream headings
 -------------------------------------------------------------------------------
 
 
-data Stream = Stream { name :: String
+data Stream = Stream { name :: Text
                      , color :: Color
                      }
 
-streamsFromNames :: [String] -> [Stream]
+streamsFromNames :: [Text] -> [Stream]
 streamsFromNames = zipWith helper ([0..] :: [Int])
   where cs = [Black, Red, Green, Yellow, Blue, Magenta, Cyan]
         l = length cs
         helper i n = Stream n (cs !! (i `rem` l))
 
 printStreamName :: Stream -> IO ()
-printStreamName (Stream n c) = putStrSGR sgr ("<" ++ n ++ ">")
+printStreamName (Stream n c) = putStrSGR sgr ("<" ++ T.unpack n ++ ">")
   where sgr = [ SetColor Foreground Vivid c
               , SetConsoleIntensity BoldIntensity
               ]
@@ -84,7 +88,7 @@ printStreamTable :: [Stream] -> IO ()
 printStreamTable ss = do
     Just (Window windowSize _) <- size :: IO (Maybe (Window Int))
 
-    let biggestLen = maximum $ map (length . name) ss
+    let biggestLen = maximum $ map (T.length . name) ss
         groupSize = windowSize `div` biggestLen
 
     mapM_ (printGroup biggestLen) $ chunksOf groupSize ss

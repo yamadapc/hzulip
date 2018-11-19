@@ -13,33 +13,53 @@ Simply installing through cabal with `cabal install hzulip` should do it.
 ## Usage
 ### Getting started
 ```haskell
-import Web.HZulip
+{-# LANGUAGE OverloadedStrings #-}
+
+import           Control.Monad.IO.Class
+import           Data.Monoid ((<>))
+import           Web.HZulip
 
 main :: IO ()
-main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
+main = do
+  options <- do
+    -- Replace by your credentials
+    o <- zulipOptions "zulip-api-user" "zulip-api-key"
+    -- Replace by your Zulip instance's URL
+    return o{ clientBaseUrl = "https://example.zulipchat.com/api/v1" }
+
+  withZulip options $ do
     -- Since we are inside the ZulipM ReaderT monad transformer, we
     -- don't need to pass options around. The above function already
     -- created an HTTP manager, for connection pooling and wrapped the
     -- default configuration options with the Monad:
-    print =<< getSubscriptions
+    liftIO . print =<< getSubscriptions
     -- >> ["haskell"]
 
     -- Sending messages is as easy as:
-    void $ sendStreamMessage "haskell"              -- message stream
-                             "hzulip"               -- message topic
-                             "Message from Haskell" -- message content
+    _msgId <- sendStreamMessage "bot-testing"          -- message stream
+                                "hzulip"               -- message topic
+                                "Message from Haskell" -- message content
 
     -- Before receiving messages, our client needs to be subscribed to streams
-    addAllSubscriptions
+    _streamNames <- addAllSubscriptions
+
+    me <- getProfile
+    let myUserId = profileUserId me
 
     -- Listening for events works with a callback based API:
     onNewMessage $ \msg -> do
-        lift $ putStrLn "Got a new message!"
-        let usr = messageSender msg
-            fn = userFullName usr
-            e = userEmail usr
+      -- Private messages one sends also appear as message events.
+      -- Ignore them to avoid generating an infinite stream of messages.
+      if userId (messageSender msg) == myUserId
+        then liftIO $ putStrLn "Got message from myself, ignoring"
+        else do
+          liftIO $ putStrLn "Got a new message!"
+          let usr = messageSender msg
+              fn = userFullName usr
+              e = userEmail usr
 
-       sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+          _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " <> fn <> "!!"
+          return ()
 ```
 
 ## Documentation
