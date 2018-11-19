@@ -137,7 +137,7 @@ sendMessage mtype mrecipients msubject mcontent = do
                , ("subject", msubject)
                ]
 
-    body <- zulipMakeRequest Messages methodPost form >>= decodeResponse
+    body <- zulipMakeRequest EndpointMessages methodPost form >>= decodeResponse
     let Just mid = responseMessageId body in return mid
 
 -- |
@@ -165,7 +165,7 @@ registerQueue evTps mdn = do
                , ("apply_markdown", if mdn then "true" else "false")
                ]
 
-    body <- zulipMakeRequest Register methodPost form >>= decodeResponse
+    body <- zulipMakeRequest EndpointRegister methodPost form >>= decodeResponse
 
     let Just qid = responseQueueId body
         Just lid = responseLastEventId body
@@ -175,7 +175,7 @@ registerQueue evTps mdn = do
 -- Get a list of all the public streams
 getStreams :: ZulipM [String]
 getStreams = do
-    r <- zulipMakeRequest Streams methodGet []
+    r <- zulipMakeRequest EndpointStreams methodGet []
     return $ map T.unpack $ r ^.. key "streams" . values
                                 . key "name" . _String
 
@@ -190,7 +190,7 @@ getStreamSubscribers s = do
 -- Get a list of the streams the client is currently subscribed to.
 getSubscriptions :: ZulipM [String]
 getSubscriptions = do
-    r <- zulipMakeRequest Subscriptions methodGet []
+    r <- zulipMakeRequest EndpointSubscriptions methodGet []
     return $ map T.unpack $ r ^.. key "subscriptions" . values
                                 . key "name" . _String
 
@@ -209,14 +209,14 @@ addSubscriptions :: [String] -> ZulipM ()
 addSubscriptions sbs = do
     let sbs' = intercalate "," $ map (\s -> "{\"name\":" ++ show s ++ "}") sbs
         form = [ ("add", "[" ++ sbs' ++ "]") ]
-    void $ zulipMakeRequest Subscriptions methodPatch form
+    void $ zulipMakeRequest EndpointSubscriptions methodPatch form
 
 -- |
 -- Remove one or more Stream subscriptions from the client
 removeSubscriptions :: [String] -> ZulipM ()
 removeSubscriptions sbs = do
     let form = [ ("delete", show sbs ) ]
-    void $ zulipMakeRequest Subscriptions methodPatch form
+    void $ zulipMakeRequest EndpointSubscriptions methodPatch form
 
 -- |
 -- Fetches new set of events from a `Queue`.
@@ -227,7 +227,7 @@ getEvents q b = do
              , ("dont_block"   , if b then "true" else "false")
              ]
 
-    body <- zulipMakeRequest Events methodGet qs >>= decodeResponse
+    body <- zulipMakeRequest EndpointEvents methodGet qs >>= decodeResponse
     let Just evs = responseEvents body
         -- Get the last event id and pass it back with the `Queue`
         lEvId = maximum $ map eventId evs
@@ -291,7 +291,13 @@ sourceZulipMessages bufSize = gatherFrom bufSize $
 -- Private functions:
 -------------------------------------------------------------------------------
 
-data Endpoint = Messages | Register | Events | Subscriptions | Streams
+data Endpoint
+  = EndpointMessages
+  | EndpointRegister
+  | EndpointEvents
+  | EndpointSubscriptions
+  | EndpointStreams
+  deriving (Eq, Ord, Show)
 
 -- |
 -- Key-value pair abstraction for working with querystrings or form-data
@@ -349,11 +355,11 @@ wasSuccessful = (== ResponseSuccess) . responseResult
 -- |
 -- Gets the suffix for some endpoint
 endpointSuffix :: Endpoint -> String
-endpointSuffix Messages      = "/messages"
-endpointSuffix Events        = "/events"
-endpointSuffix Register      = "/register"
-endpointSuffix Subscriptions = "/users/me/subscriptions"
-endpointSuffix Streams       = "/streams"
+endpointSuffix EndpointMessages      = "/messages"
+endpointSuffix EndpointEvents        = "/events"
+endpointSuffix EndpointRegister      = "/register"
+endpointSuffix EndpointSubscriptions = "/users/me/subscriptions"
+endpointSuffix EndpointStreams       = "/streams"
 
 -- |
 -- Lifted IO version of 'writeTBQueue'
