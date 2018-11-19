@@ -13,35 +13,51 @@ Simply installing through cabal with `cabal install hzulip` should do it.
 ## Usage
 ### Getting started
 ```haskell
+
 import           Control.Monad.IO.Class
 import           Web.HZulip
 
 main :: IO ()
-main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
-  -- Since we are inside the ZulipM ReaderT monad transformer, we
-  -- don't need to pass options around. The above function already
-  -- created an HTTP manager, for connection pooling and wrapped the
-  -- default configuration options with the Monad:
-  liftIO . print =<< getSubscriptions
-  -- >> ["haskell"]
+main = do
+  options <- do
+    -- Replace by your credentials
+    o <- zulipOptions "zulip-api-user" "zulip-api-key"
+    -- Replace by your Zulip instance's URL
+    return o{ clientBaseUrl = "https://example.zulipchat.com/api/v1" }
 
-  -- Sending messages is as easy as:
-  _msgId <- sendStreamMessage "haskell"              -- message stream
-                              "hzulip"               -- message topic
-                              "Message from Haskell" -- message content
+  withZulip options $ do
+    -- Since we are inside the ZulipM ReaderT monad transformer, we
+    -- don't need to pass options around. The above function already
+    -- created an HTTP manager, for connection pooling and wrapped the
+    -- default configuration options with the Monad:
+    liftIO . print =<< getSubscriptions
+    -- >> ["haskell"]
 
-  -- Before receiving messages, our client needs to be subscribed to streams
-  _streamNames <- addAllSubscriptions
+    -- Sending messages is as easy as:
+    _msgId <- sendStreamMessage "bot-testing"          -- message stream
+                                "hzulip"               -- message topic
+                                "Message from Haskell" -- message content
 
-  -- Listening for events works with a callback based API:
-  onNewMessage $ \msg -> do
-    liftIO $ putStrLn "Got a new message!"
-    let usr = messageSender msg
-        fn = userFullName usr
-        e = userEmail usr
+    -- Before receiving messages, our client needs to be subscribed to streams
+    _streamNames <- addAllSubscriptions
 
-    _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
-    return ()
+    me <- getProfile
+    let myUserId = profileUserId me
+
+    -- Listening for events works with a callback based API:
+    onNewMessage $ \msg -> do
+      -- Private messages one sends also appear as message events.
+      -- Ignore them to avoid generating an infinite stream of messages.
+      if userId (messageSender msg) == myUserId
+        then liftIO $ putStrLn "Got message from myself, ignoring"
+        else do
+          liftIO $ putStrLn "Got a new message!"
+          let usr = messageSender msg
+              fn = userFullName usr
+              e = userEmail usr
+
+          _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+          return ()
 ```
 
 ## Documentation
