@@ -74,7 +74,7 @@ import Data.Conduit.Async (gatherFrom)
 import Data.List (intercalate)
 import Data.Text as T (Text, unpack)
 import Data.Text.Encoding as T (encodeUtf8)
-import Network.HTTP.Client (Request, HttpException(..), applyBasicAuth, httpLbs,
+import Network.HTTP.Client (Request, HttpException(..), HttpExceptionContent(ResponseTimeout), applyBasicAuth, httpLbs,
                             method, newManager, parseUrl, responseBody,
                             setQueryString)
 import Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
@@ -247,7 +247,7 @@ onNewEvent etypes f = do
             (q', evts) <- getEvents' q
             mapM_ f evts
             loop q'
-        onTimeout q ResponseTimeout = getEvents' q
+        onTimeout q (HttpExceptionRequest _req ResponseTimeout) = getEvents' q
         onTimeout _ ex = throwM ex
 
 -- |
