@@ -24,6 +24,7 @@ module Web.HZulip ( Event(..)
                   , Message(..)
                   , Queue(..)
                   , User(..)
+                  , Profile(..)
                   , ZulipOptions(..)
                   , ZulipM
                   , EventCallback
@@ -33,6 +34,7 @@ module Web.HZulip ( Event(..)
                   , defaultBaseUrl
                   , eventTypes
                   , getEvents
+                  , getProfile
                   , getStreams
                   , getStreamSubscribers
                   , getSubscriptions
@@ -111,6 +113,17 @@ withZulipCreds :: String -> String -> ZulipM a -> IO a
 withZulipCreds e k action = do
     opts <- zulipOptions e k
     runZulip action opts
+
+-- |
+-- Get the current user's profile.
+getProfile :: ZulipM Profile
+getProfile = do
+  r <- zulipMakeRequest EndpointProfile methodGet []
+  case eitherDecode' r of
+    Right u -> return u
+    Left err -> fail $ "getProfile: Unexpected response from the Zulip API: " ++ CL.unpack r ++ "\n"
+                       ++ "Error was: " ++ err
+
 
 -- |
 -- The default zulip API URL
@@ -295,6 +308,7 @@ data Endpoint
   = EndpointMessages
   | EndpointRegister
   | EndpointEvents
+  | EndpointProfile
   | EndpointSubscriptions
   | EndpointStreams
   deriving (Eq, Ord, Show)
@@ -360,6 +374,7 @@ endpointSuffix :: Endpoint -> String
 endpointSuffix EndpointMessages      = "/messages"
 endpointSuffix EndpointEvents        = "/events"
 endpointSuffix EndpointRegister      = "/register"
+endpointSuffix EndpointProfile       = "/users/me"
 endpointSuffix EndpointSubscriptions = "/users/me/subscriptions"
 endpointSuffix EndpointStreams       = "/streams"
 

@@ -77,6 +77,20 @@ data Message = Message { messageId               :: Int
   deriving (Eq, Ord, Show)
 
 -- |
+-- Represents the current user's profile
+data Profile = Profile { profileClientId    :: String
+                       , profileEmail       :: String
+                       , profileFullName    :: String
+                       , profileIsAdmin     :: Bool
+                       , profileIsBot       :: Bool
+                       , profileMaxMessagId :: Int
+                       , profilePointer     :: Int
+                       , profileShortName   :: String
+                       , profileUserId      :: Int
+                       }
+  deriving (Eq, Ord, Show)
+
+-- |
 -- Represents a zulip user account - for both `display_recipient` and
 -- `message_sender` representations
 data User = User { userId        :: Int
@@ -150,6 +164,19 @@ instance FromJSON Message where
                            o .: "client"            <*>
                            o .: "subject_links"     <*>
                            o .: "subject"
+    parseJSON _ = mzero
+
+instance FromJSON Profile where
+    parseJSON (Object o) = Profile <$>
+                           o .: "client_id"      <*>
+                           o .: "email"          <*>
+                           o .: "full_name"      <*>
+                           o .: "is_admin"       <*>
+                           o .: "is_bot"         <*>
+                           o .: "max_message_id" <*>
+                           o .: "pointer"        <*>
+                           o .: "short_name"     <*>
+                           o .: "user_id"
     parseJSON _ = mzero
 
 instance FromJSON User where
