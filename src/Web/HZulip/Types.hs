@@ -6,6 +6,7 @@ import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad (mzero)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Aeson.Types (FromJSON(..), Parser, Value(..), (.:?), (.:))
+import Data.Text (Text)
 import Network.HTTP.Client (Manager)
 
 -- |
@@ -15,9 +16,9 @@ type ZulipM = ReaderT ZulipOptions IO
 
 -- |
 -- Represents a Zulip API client
-data ZulipOptions = ZulipOptions { clientEmail   :: String
-                                 , clientApiKey  :: String
-                                 , clientBaseUrl :: String
+data ZulipOptions = ZulipOptions { clientEmail   :: Text
+                                 , clientApiKey  :: Text
+                                 , clientBaseUrl :: Text
                                  , clientManager :: Manager
                                  }
 
@@ -31,10 +32,10 @@ instance Show ZulipOptions where
 -- The internal response representation for top-down parsing of Zulip API
 -- JSON responses
 data Response = Response { responseResult      :: ResponseResult
-                         , responseMsg         :: String
+                         , responseMsg         :: Text
 
                          , responseMessageId   :: Maybe Int
-                         , responseQueueId     :: Maybe String
+                         , responseQueueId     :: Maybe Text
                          , responseLastEventId :: Maybe Int
 
                          , responseEvents      :: Maybe [Event]
@@ -49,7 +50,7 @@ data ResponseResult = ResponseError | ResponseSuccess
 
 -- |
 -- Represents zulip events
-data Event = Event { eventType    :: String
+data Event = Event { eventType    :: Text
                    , eventId      :: Int
                    , eventMessage :: Maybe Message
                    }
@@ -58,34 +59,34 @@ data Event = Event { eventType    :: String
 -- |
 -- Represents a Zulip Message
 data Message = Message { messageId               :: Int
-                       , messageType             :: String
-                       , messageContent          :: String
+                       , messageType             :: Text
+                       , messageContent          :: Text
 
-                       , messageAvatarUrl        :: String
+                       , messageAvatarUrl        :: Text
                        , messageTimestamp        :: Int
 
                        -- See the comment on the `FromJSON Message` instance.
-                       , messageDisplayRecipient :: Either String [User]
+                       , messageDisplayRecipient :: Either Text [User]
 
                        , messageSender           :: User
 
                        , messageRecipientId      :: Int
-                       , messageClient           :: String
-                       , messageSubjectLinks     :: [String]
-                       , messageSubject          :: String
+                       , messageClient           :: Text
+                       , messageSubjectLinks     :: [Text]
+                       , messageSubject          :: Text
                        }
   deriving (Eq, Ord, Show)
 
 -- |
 -- Represents the current user's profile
-data Profile = Profile { profileClientId    :: String
-                       , profileEmail       :: String
-                       , profileFullName    :: String
+data Profile = Profile { profileClientId    :: Text
+                       , profileEmail       :: Text
+                       , profileFullName    :: Text
                        , profileIsAdmin     :: Bool
                        , profileIsBot       :: Bool
                        , profileMaxMessagId :: Int
                        , profilePointer     :: Int
-                       , profileShortName   :: String
+                       , profileShortName   :: Text
                        , profileUserId      :: Int
                        }
   deriving (Eq, Ord, Show)
@@ -94,17 +95,17 @@ data Profile = Profile { profileClientId    :: String
 -- Represents a zulip user account - for both `display_recipient` and
 -- `message_sender` representations
 data User = User { userId        :: Int
-                 , userFullName  :: String
-                 , userEmail     :: String
-                 , userRealm     :: Maybe String
+                 , userFullName  :: Text
+                 , userEmail     :: Text
+                 , userRealm     :: Maybe Text
                  -- ^ `display_recipient` doesn't have this, `message_sender` does
-                 , userShortName :: String
+                 , userShortName :: Text
                  }
   deriving (Eq, Ord, Show)
 
 -- |
 -- Represents some event queue
-data Queue = Queue { queueId     :: String
+data Queue = Queue { queueId     :: Text
                    , lastEventId :: Int
                    }
   deriving (Eq, Ord, Show)
@@ -188,7 +189,7 @@ instance FromJSON User where
                            o .: "short_name"
     parseJSON _ = mzero
 
-parseDisplayRecipient :: Value -> Parser (Either String [User])
+parseDisplayRecipient :: Value -> Parser (Either Text [User])
 parseDisplayRecipient v = case v of
     -- Matching explicitly here instead of using <|>
     -- improves aeson error messages.

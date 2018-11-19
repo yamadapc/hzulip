@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main
   where
 
@@ -6,6 +8,7 @@ import Control.Exception (SomeException)
 import Control.Monad (void, when)
 import Control.Monad.Catch (catchAll)
 import Data.List (intercalate, isPrefixOf)
+import qualified Data.Text as T
 import System.Environment (getEnv)
 
 import Web.HZulip
@@ -23,7 +26,7 @@ startEchoer = onNewMessage $ \msg -> do
     nr <- nonRecursive msg
     let c = messageContent msg
 
-    when (nr && "echo " `isPrefixOf` c) $ void $ async $ do
+    when (nr && "echo " `T.isPrefixOf` c) $ void $ async $ do
         r <- case messageType msg of
             "stream" ->
                 let Left stream = messageDisplayRecipient msg
@@ -33,9 +36,9 @@ startEchoer = onNewMessage $ \msg -> do
                 let Right users = messageDisplayRecipient msg
                     recipients = map userEmail users
                   in sendPrivateMessage recipients c >>
-                     return (intercalate ", " recipients)
-            t -> fail $ "Unrecognized message type " ++ t
-        lift $ putStrLn $ "Echoed " ++ c ++ " to " ++ r
+                     return (T.intercalate ", " recipients)
+            t -> fail $ "Unrecognized message type " ++ T.unpack t
+        lift $ putStrLn $ "Echoed " ++ T.unpack c ++ " to " ++ T.unpack r
 
 onZulipError :: SomeException -> ZulipM ()
 onZulipError ex = lift $ putStrLn "Zulip Client errored:" >> print ex
@@ -47,6 +50,6 @@ nonRecursive msg = do
 
 withZulipEnv :: ZulipM a -> IO a
 withZulipEnv action = do
-    user <- getEnv "ZULIP_USER"
-    key  <- getEnv "ZULIP_KEY"
+    user <- fmap T.pack $ getEnv "ZULIP_USER"
+    key  <- fmap T.pack $ getEnv "ZULIP_KEY"
     withZulipCreds user key action

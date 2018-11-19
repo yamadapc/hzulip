@@ -13,8 +13,10 @@ Simply installing through cabal with `cabal install hzulip` should do it.
 ## Usage
 ### Getting started
 ```haskell
+{-# LANGUAGE OverloadedStrings #-}
 
 import           Control.Monad.IO.Class
+import           Data.Monoid ((<>))
 import           Web.HZulip
 
 main :: IO ()
@@ -56,7 +58,7 @@ main = do
               fn = userFullName usr
               e = userEmail usr
 
-          _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+          _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " <> fn <> "!!"
           return ()
 ```
 

@@ -4,6 +4,7 @@ module Main
 import Control.Exception (SomeException)
 import Control.Monad (void)
 import Control.Monad.Catch (catchAll)
+import qualified Data.Text as T
 import System.Environment (getEnv)
 
 import Web.HZulip
@@ -25,6 +26,6 @@ onZulipError ex = lift $ putStrLn "Zulip Client errored:" >> print ex
 
 withZulipEnv :: ZulipM a -> IO a
 withZulipEnv action = do
-    user <- getEnv "ZULIP_USER"
-    key  <- getEnv "ZULIP_KEY"
+    user <- fmap T.pack $ getEnv "ZULIP_USER"
+    key  <- fmap T.pack $ getEnv "ZULIP_KEY"
     withZulipCreds user key action
