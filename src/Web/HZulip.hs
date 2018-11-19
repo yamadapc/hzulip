@@ -64,7 +64,7 @@ import Control.Monad.Catch (catch, throwM)
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Reader (ask, runReaderT)
-import Data.Aeson (decode)
+import Data.Aeson (eitherDecode')
 import Data.Aeson.Lens (key, values, _String)
 import qualified Data.ByteString.Lazy as BL (ByteString)
 import qualified Data.ByteString.Char8 as C (pack)
@@ -322,10 +322,12 @@ zulipMakeRequest' u m d = do
 -- |
 -- A helper for decoding a response in the Zulip monad
 decodeResponse :: BL.ByteString -> ZulipM ZT.Response
-decodeResponse b = case decode b of
-    Just r -> if wasSuccessful r then return r
-                                 else fail $ responseMsg r
-    _ -> fail $ "Unexpected response from the Zulip API: " ++ CL.unpack b
+decodeResponse b = do
+  case eitherDecode' b of
+    Right r -> if wasSuccessful r then return r
+                                  else fail $ responseMsg r
+    Left err -> fail $ "decodeResponse: Unexpected response from the Zulip API: " ++ CL.unpack b ++ "\n"
+                       ++ "Error was: " ++ err
 
 -- |
 -- Adds a QueryString or FormData body, represented by a list of tuples,
