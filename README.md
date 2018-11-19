@@ -13,33 +13,35 @@ Simply installing through cabal with `cabal install hzulip` should do it.
 ## Usage
 ### Getting started
 ```haskell
-import Web.HZulip
+import           Control.Monad.IO.Class
+import           Web.HZulip
 
 main :: IO ()
 main = withZulipCreds "zulip-api-user" "zulip-api-key" $ do
-    -- Since we are inside the ZulipM ReaderT monad transformer, we
-    -- don't need to pass options around. The above function already
-    -- created an HTTP manager, for connection pooling and wrapped the
-    -- default configuration options with the Monad:
-    print =<< getSubscriptions
-    -- >> ["haskell"]
+  -- Since we are inside the ZulipM ReaderT monad transformer, we
+  -- don't need to pass options around. The above function already
+  -- created an HTTP manager, for connection pooling and wrapped the
+  -- default configuration options with the Monad:
+  liftIO . print =<< getSubscriptions
+  -- >> ["haskell"]
 
-    -- Sending messages is as easy as:
-    void $ sendStreamMessage "haskell"              -- message stream
-                             "hzulip"               -- message topic
-                             "Message from Haskell" -- message content
+  -- Sending messages is as easy as:
+  _msgId <- sendStreamMessage "haskell"              -- message stream
+                              "hzulip"               -- message topic
+                              "Message from Haskell" -- message content
 
-    -- Before receiving messages, our client needs to be subscribed to streams
-    addAllSubscriptions
+  -- Before receiving messages, our client needs to be subscribed to streams
+  _streamNames <- addAllSubscriptions
 
-    -- Listening for events works with a callback based API:
-    onNewMessage $ \msg -> do
-        lift $ putStrLn "Got a new message!"
-        let usr = messageSender msg
-            fn = userFullName usr
-            e = userEmail usr
+  -- Listening for events works with a callback based API:
+  onNewMessage $ \msg -> do
+    liftIO $ putStrLn "Got a new message!"
+    let usr = messageSender msg
+        fn = userFullName usr
+        e = userEmail usr
 
-       sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+    _privateMsgId <- sendPrivateMessage [e] $ "Thanks for the message " ++ fn ++ "!!"
+    return ()
 ```
 
 ## Documentation
