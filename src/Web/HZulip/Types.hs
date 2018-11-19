@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Web.HZulip.Types where
 
-import Control.Applicative ((<$>), (<*>), (<|>), pure)
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad (mzero)
 import Control.Monad.Trans.Reader (ReaderT)
 import Data.Aeson.Types (FromJSON(..), Parser, Value(..), (.:?), (.:))
@@ -163,5 +163,8 @@ instance FromJSON User where
     parseJSON _ = mzero
 
 parseDisplayRecipient :: Value -> Parser (Either String [User])
-parseDisplayRecipient v = Right <$> parseJSON v <|>
-                          Left <$> parseJSON v
+parseDisplayRecipient v = case v of
+    -- Matching explicitly here instead of using <|>
+    -- improves aeson error messages.
+    Array{} -> Right <$> parseJSON v
+    _ -> Left <$> parseJSON v
