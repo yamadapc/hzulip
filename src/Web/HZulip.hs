@@ -56,32 +56,37 @@ module Web.HZulip ( Event(..)
                   )
   where
 
-import Control.Arrow (second)
-import Control.Concurrent.STM (TBQueue, atomically, writeTBQueue)
-import Control.Lens ((^..))
-import Control.Monad (void)
-import Control.Monad.Catch (catch, throwM)
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Reader (ask, runReaderT)
-import Data.Aeson (decode)
-import Data.Aeson.Lens (key, values, _String)
-import qualified Data.ByteString.Lazy as BL (ByteString)
-import qualified Data.ByteString.Char8 as C (pack)
-import qualified Data.ByteString.Lazy.Char8 as CL (unpack)
-import Data.Conduit (Sink, Source, await)
-import Data.Conduit.Async (gatherFrom)
-import Data.List (intercalate)
-import Data.Text as T (Text, unpack)
-import Data.Text.Encoding as T (encodeUtf8)
-import Network.HTTP.Client (Request, HttpException(..), applyBasicAuth, httpLbs,
-                            method, newManager, parseUrl, responseBody,
-                            setQueryString)
-import Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
-import Network.HTTP.Types (Method, methodGet, methodPatch, methodPost)
+import           Control.Arrow                         (second)
+import           Control.Concurrent.STM                (TBQueue, atomically,
+                                                        writeTBQueue)
+import           Control.Lens                          ((^..))
+import           Control.Monad                         (void)
+import           Control.Monad.Catch                   (catch, throwM)
+import           Control.Monad.IO.Class                (liftIO)
+import           Control.Monad.Trans                   (lift)
+import           Control.Monad.Trans.Reader            (ask, runReaderT)
+import           Data.Aeson                            (decode)
+import           Data.Aeson.Lens                       (key, values, _String)
+import qualified Data.ByteString.Char8                 as C (pack)
+import qualified Data.ByteString.Lazy                  as BL (ByteString)
+import qualified Data.ByteString.Lazy.Char8            as CL (unpack)
+import           Data.Conduit                          (Sink, Source, await)
+import           Data.Conduit.Async                    (gatherFrom)
+import           Data.List                             (intercalate)
+import           Data.Text                             as T (Text, unpack)
+import           Data.Text.Encoding                    as T (encodeUtf8)
+import           Network.HTTP.Client                   (HttpException (..), HttpExceptionContent (..),
+                                                        Request, applyBasicAuth,
+                                                        httpLbs, method,
+                                                        newManager, parseUrl,
+                                                        responseBody,
+                                                        setQueryString)
+import           Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
+import           Network.HTTP.Client.TLS               (tlsManagerSettings)
+import           Network.HTTP.Types                    (Method, methodGet,
+                                                        methodPatch, methodPost)
 
-import Web.HZulip.Types as ZT
+import           Web.HZulip.Types                      as ZT
 
 -- Public functions:
 -------------------------------------------------------------------------------
@@ -247,8 +252,8 @@ onNewEvent etypes f = do
             (q', evts) <- getEvents' q
             mapM_ f evts
             loop q'
-        onTimeout q ResponseTimeout = getEvents' q
-        onTimeout _ ex = throwM ex
+        onTimeout q (HttpExceptionRequest _ ResponseTimeout) = getEvents' q
+        onTimeout _ ex                                       = throwM ex
 
 -- |
 -- Registers a callback to be executed whenever a message comes in. Will

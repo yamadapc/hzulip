@@ -19,21 +19,21 @@ source-repository head
 library
   exposed-modules:     Web.HZulip
                      , Web.HZulip.Types
-  build-depends:       base >=4 && <5
-                     , conduit >=1.2 && <1.3
-                     , stm >=2.4 && <2.5
-                     , stm-conduit >=2.5 && <=3
-                     , http-client >=0.2 && <1
+  build-depends:       base 
+                     , conduit
+                     , stm 
+                     , stm-conduit 
+                     , http-client 
                      , http-client-tls
                      , http-types
-                     , exceptions >=0.6 && <0.9
-                     , mtl >=2.1 && <=2.3
+                     , exceptions 
+                     , mtl 
                      , transformers
-                     , lens >=4.4 && <5
-                     , aeson >=0.7 && <1
-                     , lens-aeson >=1 && <2
-                     , bytestring >=0.10 && <1
-                     , text >=1.2 &&<1.3
+                     , lens
+                     , aeson 
+                     , lens-aeson 
+                     , bytestring 
+                     , text 
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -46,23 +46,23 @@ test-suite hzulip-spec
                      , HZulipTypesSpec
   hs-source-dirs:      src
                      , test
-  build-depends:       base >=4 && <5
+  build-depends:       base 
                      , async
-                     , conduit >=1.2 && <1.3
-                     , stm >=2.4 && <2.5
-                     , stm-conduit >=2.5 && <=3
-                     , http-client >=0.2 && <1
+                     , conduit 
+                     , stm 
+                     , stm-conduit 
+                     , http-client
                      , http-client-tls
                      , http-types
-                     , exceptions >=0.6 && <0.9
-                     , mtl >=2.1 && <=2.3
+                     , exceptions 
+                     , mtl 
                      , transformers
-                     , lens >=4.4 && <5
-                     , aeson >=0.7 && <1
-                     , scotty >=0.9 && <0.12
-                     , lens-aeson >=1 && <2
-                     , bytestring >=0.10 && <1
+                     , lens
+                     , aeson
+                     , scotty 
+                     , lens-aeson
+                     , bytestring
                      , hspec
-                     , raw-strings-qq >=1.0.2 && <2
-                     , text >=1.2 &&<1.3
+                     , raw-strings-qq 
+                     , text 
   default-language:    Haskell2010
